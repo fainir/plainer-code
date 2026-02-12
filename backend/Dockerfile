@@ -7,11 +7,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy everything first (respects .dockerignore)
+# Copy everything first
 COPY . .
 
+# Debug: list app directory to verify storage module is present
+RUN echo "=== Files in /app ===" && find /app/app -type f | sort && echo "=== END FILES ==="
+
 # Install Python dependencies
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir -e .
 
 # Expose port
 EXPOSE 8000

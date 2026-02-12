@@ -7,9 +7,5 @@ __pycache__/
 .pytest_cache/
 tests/
 
-# Ignore data storage directory (NOT app/storage which is source code)
-storage/
-
-# Never ignore the app source
-!app/
-!app/**
+# Ignore the data storage directory (top-level only)
+/storage/

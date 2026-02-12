@@ -1,0 +1,15 @@
+# Ignore dev/local stuff
+.venv/
+.env
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+tests/
+
+# Ignore data storage directory (NOT app/storage which is source code)
+storage/
+
+# Never ignore the app source
+!app/
+!app/**

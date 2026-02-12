@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(.venv/bin/alembic revision:*)",
+      "Bash(.venv/bin/alembic upgrade:*)",
+      "Bash(curl:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1OTYwMzNmYi03MGE1LTRmOWQtYjE0ZS00NTVmMjZmYTMyZTYiLCJleHAiOjE3NzA4OTgxNzF9.Z06HyBpGBXbrdnjUySOTkYaqhDDoSylEishglFBdWKU\")",
+      "Bash(python3:*)",
+      "Bash(npx vite build:*)",
+      "Bash(python -c:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(docker exec:*)"
+    ]
+  }
+}

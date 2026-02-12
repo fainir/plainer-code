@@ -1,0 +1,509 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import {
+  getMyDrive,
+  listFolders,
+  listFiles,
+  listSharedWithMe,
+  listFavoriteFiles,
+  listFavoriteFolders,
+  getFileLinkedViews,
+} from '../../api/drive';
+import { useDriveStore } from '../../stores/driveStore';
+import { useAuthStore } from '../../stores/authStore';
+import type { FolderItem, FileItem } from '../../lib/types';
+import {
+  Lock,
+  Globe,
+  ChevronRight,
+  ChevronDown,
+  Folder as FolderIcon,
+  LogOut,
+  FileCode,
+  FileText,
+  Image,
+  FileSpreadsheet,
+  File as FileIcon,
+  Sparkles,
+  Star,
+  Eye,
+  Plus,
+} from 'lucide-react';
+
+function splitFileName(name: string): { base: string; ext: string } {
+  const dot = name.lastIndexOf('.');
+  if (dot <= 0) return { base: name, ext: '' };
+  return { base: name.slice(0, dot), ext: name.slice(dot) };
+}
+
+function treeFileIcon(fileType: string) {
+  switch (fileType) {
+    case 'code':
+      return <FileCode size={14} className="text-emerald-500 shrink-0" />;
+    case 'document':
+      return <FileText size={14} className="text-blue-500 shrink-0" />;
+    case 'image':
+      return <Image size={14} className="text-purple-500 shrink-0" />;
+    case 'spreadsheet':
+      return <FileSpreadsheet size={14} className="text-green-500 shrink-0" />;
+    case 'pdf':
+      return <FileText size={14} className="text-red-500 shrink-0" />;
+    case 'view':
+      return <Eye size={14} className="text-violet-500 shrink-0" />;
+    default:
+      return <FileIcon size={14} className="text-gray-400 shrink-0" />;
+  }
+}
+
+function FileNode({ file, depth }: { file: FileItem; depth: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const { selectedFileId, selectFile, selectLinkedView } = useDriveStore();
+  const isActive = selectedFileId === file.id;
+
+  // Lazy-load linked views when expanded
+  const { data: linkedViews } = useQuery({
+    queryKey: ['file-linked-views', file.id],
+    queryFn: () => getFileLinkedViews(file.id),
+    enabled: expanded,
+  });
+
+  const hasViews = expanded && linkedViews && linkedViews.length > 0;
+
+  const hasExpandButton = file.file_type !== 'view';
+
+  return (
+    <div>
+      <div
+        className={`group w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
+          isActive
+            ? 'bg-indigo-50 text-indigo-700 font-medium'
+            : 'text-gray-700 hover:bg-gray-100'
+        }`}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        role="button"
+        tabIndex={0}
+        onClick={() => selectFile(file.id, file.name, file.file_type)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, file.file_type);
+        }}
+      >
+        {/* Expand arrow on the left — only for non-view files */}
+        {hasExpandButton ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+            className={`p-0.5 rounded shrink-0 transition ${
+              expanded
+                ? 'text-gray-500'
+                : 'text-gray-300 hover:text-gray-500'
+            }`}
+            title={expanded ? 'Hide views' : 'Show views'}
+          >
+            {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+          </button>
+        ) : (
+          <span className="w-[15px] shrink-0" />
+        )}
+        {treeFileIcon(file.file_type)}
+        <span className="truncate flex-1">
+          {splitFileName(file.name).base}
+          <span className="text-[0.7em] opacity-40">{splitFileName(file.name).ext}</span>
+        </span>
+        {file.is_vibe_file && (
+          <Sparkles size={11} className="text-indigo-400 shrink-0" />
+        )}
+      </div>
+
+      {/* Linked views nested underneath */}
+      {expanded && (
+        <div>
+          {hasViews ? (
+            linkedViews.map((view) => (
+              <button
+                key={view.id}
+                type="button"
+                onClick={() => {
+                  selectFile(file.id, file.name, file.file_type);
+                  selectLinkedView(view.view_file_id);
+                }}
+                className="w-full flex items-center gap-1.5 py-0.5 px-2 text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50 rounded transition"
+                style={{ paddingLeft: `${depth * 16 + 42}px` }}
+              >
+                <Eye size={11} className="shrink-0" />
+                <span className="truncate">{view.label}</span>
+              </button>
+            ))
+          ) : (
+            <p
+              className="text-[11px] text-gray-400 italic py-0.5"
+              style={{ paddingLeft: `${depth * 16 + 42}px` }}
+            >
+              No views
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const { currentFolderId, navigateToFolder } = useDriveStore();
+  const isActive = currentFolderId === folder.id;
+
+  const { data: childFolders } = useQuery({
+    queryKey: ['drive-folders', folder.id],
+    queryFn: () => listFolders(folder.id),
+    enabled: expanded,
+  });
+
+  const { data: childFiles } = useQuery({
+    queryKey: ['drive-files', folder.id],
+    queryFn: () => listFiles(folder.id),
+    enabled: expanded,
+  });
+
+  return (
+    <div>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => {
+          navigateToFolder(folder.id, folder.name);
+          if (!expanded) setExpanded(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            navigateToFolder(folder.id, folder.name);
+            if (!expanded) setExpanded(true);
+          }
+        }}
+        className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
+          isActive
+            ? 'bg-indigo-50 text-indigo-700 font-medium'
+            : 'text-gray-700 hover:bg-gray-100'
+        }`}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
+          className="p-0.5 hover:bg-gray-200 rounded shrink-0"
+          title={expanded ? 'Collapse' : 'Expand'}
+        >
+          {expanded ? (
+            <ChevronDown size={12} className="text-gray-400" />
+          ) : (
+            <ChevronRight size={12} className="text-gray-400" />
+          )}
+        </button>
+        <FolderIcon size={14} className="text-amber-500 shrink-0" />
+        <span className="truncate">{folder.name}</span>
+      </div>
+
+      {expanded && (
+        <>
+          {childFolders?.map((child) => (
+            <FolderNode key={child.id} folder={child} depth={depth + 1} />
+          ))}
+          {childFiles?.map((file) => (
+            <FileNode key={file.id} file={file} depth={depth + 1} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+
+function CollapsibleSection({
+  label,
+  icon,
+  children,
+  defaultOpen = false,
+  count,
+  onAction,
+  actionTitle,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  count?: number;
+  onAction?: () => void;
+  actionTitle?: string;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+        >
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          {icon}
+          <span>{label}</span>
+          {count !== undefined && count > 0 && (
+            <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal normal-case">
+              {count}
+            </span>
+          )}
+        </button>
+        {onAction && (
+          <button
+            type="button"
+            onClick={onAction}
+            className="px-2 py-1 text-gray-400 hover:text-indigo-600 transition"
+            title={actionTitle || 'Add'}
+          >
+            <Plus size={12} />
+          </button>
+        )}
+      </div>
+      {open && <div className="ml-2 pl-1">{children}</div>}
+    </div>
+  );
+}
+
+function FavoritesSection() {
+  const { selectedFileId, selectFile, navigateToFolder } = useDriveStore();
+
+  const { data: favFiles } = useQuery({
+    queryKey: ['favorite-files'],
+    queryFn: () => listFavoriteFiles(),
+  });
+
+  const { data: favFolders } = useQuery({
+    queryKey: ['favorite-folders'],
+    queryFn: () => listFavoriteFolders(),
+  });
+
+  const favCount = (favFiles?.length || 0) + (favFolders?.length || 0);
+
+  return (
+    <CollapsibleSection
+      label="Favorites"
+      icon={<Star size={10} />}
+      count={favCount}
+      defaultOpen
+    >
+      {favCount > 0 ? (
+        <>
+          {favFolders?.map((folder) => (
+            <div
+              key={folder.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigateToFolder(folder.id, folder.name)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') navigateToFolder(folder.id, folder.name);
+              }}
+              className="w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer text-gray-700 hover:bg-gray-100"
+              style={{ paddingLeft: '8px' }}
+            >
+              <FolderIcon size={14} className="text-amber-500 shrink-0" />
+              <span className="truncate flex-1">{folder.name}</span>
+              <Star size={10} className="text-yellow-400 shrink-0 fill-yellow-400" />
+            </div>
+          ))}
+          {favFiles?.map((file) => {
+            const isActive = selectedFileId === file.id;
+            return (
+              <div
+                key={file.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => selectFile(file.id, file.name, file.file_type)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, file.file_type);
+                }}
+                className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700 font-medium'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                style={{ paddingLeft: '8px' }}
+              >
+                {treeFileIcon(file.file_type)}
+                <span className="truncate flex-1">
+                  {splitFileName(file.name).base}
+                  <span className="text-[0.7em] opacity-40">{splitFileName(file.name).ext}</span>
+                </span>
+                <Star size={10} className="text-yellow-400 shrink-0 fill-yellow-400" />
+              </div>
+            );
+          })}
+        </>
+      ) : (
+        <p className="px-3 py-2 text-xs text-gray-400 italic">
+          Star files to pin them here
+        </p>
+      )}
+    </CollapsibleSection>
+  );
+}
+
+function PrivateSection() {
+  const { view, navigateToRoot, currentFolderId } = useDriveStore();
+  const isActive = view === 'private';
+
+  // Fetch drive to get system folder IDs
+  const { data: drive } = useQuery({
+    queryKey: ['my-drive'],
+    queryFn: () => getMyDrive(),
+  });
+
+  const filesFolderId = drive?.files_folder_id;
+
+  // Auto-navigate to Files folder when drive data loads (Private = Files folder)
+  useEffect(() => {
+    if (isActive && filesFolderId && !currentFolderId) {
+      navigateToRoot(filesFolderId);
+    }
+  }, [isActive, filesFolderId, currentFolderId, navigateToRoot]);
+
+  // Fetch contents of Files folder
+  const { data: filesFiles } = useQuery({
+    queryKey: ['drive-files', filesFolderId],
+    queryFn: () => listFiles(filesFolderId!),
+    enabled: isActive && !!filesFolderId,
+  });
+
+  const { data: filesFolders } = useQuery({
+    queryKey: ['drive-folders', filesFolderId],
+    queryFn: () => listFolders(filesFolderId!),
+    enabled: isActive && !!filesFolderId,
+  });
+
+  // Filter out view-type files — they show nested under their parent
+  const visibleFiles = filesFiles?.filter((f) => f.file_type !== 'view') || [];
+
+  const isRootActive = currentFolderId === filesFolderId;
+
+  return (
+    <div>
+      <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <Lock size={12} />
+        Private
+      </div>
+
+      {/* Root folder button */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => filesFolderId && navigateToRoot(filesFolderId)}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && filesFolderId) navigateToRoot(filesFolderId);
+        }}
+        className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
+          isRootActive
+            ? 'bg-indigo-50 text-indigo-700 font-medium'
+            : 'text-gray-700 hover:bg-gray-100'
+        }`}
+        style={{ paddingLeft: '8px' }}
+      >
+        <FolderIcon size={14} className="text-amber-500 shrink-0" />
+        <span className="truncate">My Files</span>
+      </div>
+
+      <div className="space-y-0.5">
+        {/* Folders first */}
+        {filesFolders?.map((folder) => (
+          <FolderNode key={folder.id} folder={folder} depth={1} />
+        ))}
+        {/* Then files */}
+        {visibleFiles.map((file) => (
+          <FileNode key={file.id} file={file} depth={1} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SharedSection() {
+  const { data: sharedFiles } = useQuery({
+    queryKey: ['shared-files'],
+    queryFn: () => listSharedWithMe(),
+  });
+
+  // Filter out view-type files — they show nested under their parent
+  const visibleFiles = sharedFiles?.filter((f) => f.file_type !== 'view') || [];
+
+  return (
+    <div>
+      <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <Globe size={12} />
+        Shared
+      </div>
+
+      <div className="space-y-0.5">
+        {visibleFiles.length > 0 ? (
+          visibleFiles.map((file) => (
+            <FileNode key={file.id} file={file} depth={0} />
+          ))
+        ) : (
+          <p className="px-3 py-2 text-xs text-gray-400 italic">
+            No shared files yet
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function FolderExplorer() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  return (
+    <div className="h-full flex flex-col bg-white">
+      {/* App header */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <h1 className="text-base font-bold text-gray-900">Plainer</h1>
+      </div>
+
+      {/* Navigation sections */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-2 space-y-0.5">
+          <FavoritesSection />
+          <PrivateSection />
+          <SharedSection />
+        </div>
+      </div>
+
+      {/* User */}
+      <div className="px-4 py-3 border-t border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-medium text-indigo-600 shrink-0">
+              {user?.display_name?.[0]?.toUpperCase() || '?'}
+            </div>
+            <span className="text-sm text-gray-700 truncate">{user?.display_name}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            className="text-gray-400 hover:text-gray-600"
+            title="Sign out"
+          >
+            <LogOut size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

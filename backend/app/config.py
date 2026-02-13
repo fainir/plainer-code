@@ -1,3 +1,4 @@
+from typing import Any
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
@@ -27,7 +28,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6380"
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: Any = ["http://localhost:5173"]
 
     # OAuth
     google_client_id: str = ""
@@ -48,11 +49,17 @@ class Settings(BaseSettings):
 
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: str | list[str] | None) -> list[str]:
+    def assemble_cors_origins(cls, v: Any) -> list[str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, list):
             return v
+        elif isinstance(v, str) and v.startswith("["):
+            import json
+            try:
+                return json.loads(v)
+            except:
+                return [v]
         return v or ["http://localhost:5173"]
 
 

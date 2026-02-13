@@ -22,7 +22,7 @@ from app.schemas.file import (
 )
 from app.schemas.chat import ConversationCreate, ConversationResponse, MessageResponse
 from app.services import file_service, chat_service
-from app.storage.local import LocalStorageBackend
+from app.filestore.local import LocalStorageBackend
 from app.config import settings
 
 router = APIRouter(prefix="/drive", tags=["drive"])

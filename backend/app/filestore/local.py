@@ -3,7 +3,7 @@ from pathlib import Path
 
 import aiofiles
 
-from app.storage.base import StorageBackend
+from app.filestore.base import StorageBackend
 
 
 class LocalStorageBackend(StorageBackend):

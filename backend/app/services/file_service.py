@@ -17,7 +17,7 @@ from app.services.view_templates import (
     generate_calendar_html,
     generate_document_html,
 )
-from app.storage.base import StorageBackend
+from app.filestore.base import StorageBackend
 
 
 def detect_file_type(mime_type: str, filename: str) -> str:

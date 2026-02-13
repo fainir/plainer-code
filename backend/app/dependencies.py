@@ -10,9 +10,9 @@ from app.config import settings
 from app.database import get_db
 
 from app.models.user import User
-from app.storage.base import StorageBackend
-from app.storage.local import LocalStorageBackend
-from app.storage.s3 import S3StorageBackend
+from app.filestore.base import StorageBackend
+from app.filestore.local import LocalStorageBackend
+from app.filestore.s3 import S3StorageBackend
 
 security = HTTPBearer()
 

@@ -5,7 +5,7 @@ import aioboto3
 from botocore.exceptions import ClientError
 
 from app.config import settings
-from app.storage.base import StorageBackend
+from app.filestore.base import StorageBackend
 
 
 class S3StorageBackend(StorageBackend):

@@ -8,7 +8,7 @@ from app.agent.system_prompt import SYSTEM_PROMPT
 from app.agent.tools import TOOLS
 from app.models.file import File
 from app.services import file_service
-from app.storage.base import StorageBackend
+from app.filestore.base import StorageBackend
 from app.websocket.manager import ConnectionManager
 
 

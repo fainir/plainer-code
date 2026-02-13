@@ -37,14 +37,16 @@ class Settings(BaseSettings):
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
-    @field_validator("database_url", mode="before")
-    @classmethod
-    def assemble_db_connection(cls, v: str | None) -> str:
-        if v and v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql+asyncpg://", 1)
-        if v and v.startswith("postgresql://"):
-            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: str | list[str] | None) -> list[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, list):
+            return v
+        return v or ["http://localhost:5173"]
 
 
 settings = Settings()

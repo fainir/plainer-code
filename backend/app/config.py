@@ -1,5 +1,4 @@
-import json
-from typing import Any, List, Union
+from typing import Any, List
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
@@ -28,8 +27,8 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6380"
 
-    # CORS - Use Union[str, List[str]] to allow string input from env without JSON parsing
-    cors_origins: Union[str, List[str]] = "http://localhost:5173"
+    # CORS - Now that CORS_ORIGINS is set as a JSON list on Railway, we can use List[str]
+    cors_origins: List[str] = ["http://localhost:5173"]
 
     # OAuth
     google_client_id: str = ""
@@ -48,21 +47,6 @@ class Settings(BaseSettings):
             if v.startswith("postgresql://"):
                 return v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
-
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def assemble_cors_origins(cls, v: Any) -> List[str]:
-        if isinstance(v, str):
-            v_trimmed = v.strip()
-            if v_trimmed.startswith("["):
-                try:
-                    return json.loads(v_trimmed)
-                except:
-                    pass
-            return [i.strip() for i in v_trimmed.split(",") if i.strip()]
-        if isinstance(v, list):
-            return v
-        return ["http://localhost:5173"]
 
 
 settings = Settings()

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useChatStore } from '../stores/chatStore';
 import { useDriveStore } from '../stores/driveStore';
 import toast from 'react-hot-toast';
+import { getWsUrl } from '../api/config';
 
 const RECONNECT_BASE_DELAY = 1000;
 const RECONNECT_MAX_DELAY = 15000;
@@ -48,8 +49,7 @@ export function useWebSocket() {
       return;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/v1/ws/drive?token=${token}`;
+    const wsUrl = getWsUrl(token);
     console.log('[WS] Connecting to', wsUrl);
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;

@@ -1,4 +1,5 @@
-from typing import Any
+import json
+from typing import Any, List, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
@@ -27,8 +28,8 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6380"
 
-    # CORS
-    cors_origins: Any = ["http://localhost:5173"]
+    # CORS - Use Union[str, List[str]] to allow string input from env without JSON parsing
+    cors_origins: Union[str, List[str]] = "http://localhost:5173"
 
     # OAuth
     google_client_id: str = ""
@@ -40,27 +41,28 @@ class Settings(BaseSettings):
 
     @field_validator("database_url", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: str | None) -> str:
-        if v and v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql+asyncpg://", 1)
-        if v and v.startswith("postgresql://"):
-            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+    def assemble_db_connection(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+asyncpg://", 1)
+            if v.startswith("postgresql://"):
+                return v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
 
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Any) -> list[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, list):
+    def assemble_cors_origins(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            v_trimmed = v.strip()
+            if v_trimmed.startswith("["):
+                try:
+                    return json.loads(v_trimmed)
+                except:
+                    pass
+            return [i.strip() for i in v_trimmed.split(",") if i.strip()]
+        if isinstance(v, list):
             return v
-        elif isinstance(v, str) and v.startswith("["):
-            import json
-            try:
-                return json.loads(v)
-            except:
-                return [v]
-        return v or ["http://localhost:5173"]
+        return ["http://localhost:5173"]
 
 
 settings = Settings()

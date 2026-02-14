@@ -6,7 +6,7 @@ from app.models.folder import Folder
 from app.models.file import File, FileVersion
 from app.models.chat import Conversation, Message
 from app.models.sharing import FileShare, FolderShare
-from app.models.view import FileView
+from app.models.app_type import AppType
 
 __all__ = [
     "Base",
@@ -22,5 +22,5 @@ __all__ = [
     "Message",
     "FileShare",
     "FolderShare",
-    "FileView",
+    "AppType",
 ]

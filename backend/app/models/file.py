@@ -36,6 +36,16 @@ class File(UUIDMixin, TimestampMixin, Base):
         DateTime(timezone=True), nullable=True
     )
 
+    # Instance fields (for app instances that visualise data files)
+    is_instance: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    app_type_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("app_types.id", ondelete="SET NULL"), nullable=True
+    )
+    source_file_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("files.id", ondelete="SET NULL"), nullable=True
+    )
+    instance_config: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id])
     workspace: Mapped["Workspace"] = relationship("Workspace")
     folder: Mapped["Folder | None"] = relationship("Folder")
@@ -43,11 +53,12 @@ class File(UUIDMixin, TimestampMixin, Base):
     versions: Mapped[list["FileVersion"]] = relationship(
         back_populates="file", cascade="all, delete-orphan"
     )
-    linked_views: Mapped[list["FileView"]] = relationship(
-        "FileView", foreign_keys="FileView.file_id", cascade="all, delete-orphan"
+    app_type: Mapped["AppType | None"] = relationship("AppType", foreign_keys=[app_type_id])
+    source_file: Mapped["File | None"] = relationship(
+        "File", remote_side="File.id", foreign_keys=[source_file_id]
     )
-    linked_to_files: Mapped[list["FileView"]] = relationship(
-        "FileView", foreign_keys="FileView.view_file_id", cascade="all, delete-orphan"
+    instances: Mapped[list["File"]] = relationship(
+        "File", foreign_keys=[source_file_id], viewonly=True
     )
 
 

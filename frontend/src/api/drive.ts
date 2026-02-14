@@ -1,5 +1,5 @@
 import api from './client';
-import type { FileItem, FolderItem, Conversation, Message, Drive, FileViewLink, AllViewsResponse } from '../lib/types';
+import type { FileItem, FolderItem, Conversation, Message, Drive, AppType } from '../lib/types';
 
 export async function getMyDrive() {
   const res = await api.get('/drive');
@@ -24,7 +24,17 @@ export async function createFile(name: string, content: string, folderId?: strin
 
 export async function getFileContent(fileId: string) {
   const res = await api.get(`/drive/files/${fileId}/content`);
-  return res.data as { id: string; name: string; content: string; mime_type: string; is_favorite: boolean };
+  return res.data as {
+    id: string;
+    name: string;
+    content: string;
+    mime_type: string;
+    is_favorite: boolean;
+    is_instance: boolean;
+    app_type_slug: string | null;
+    source_file_id: string | null;
+    instance_config: string | null;
+  };
 }
 
 export async function listFolders(parentId?: string) {
@@ -72,34 +82,50 @@ export async function listFavoriteFolders() {
   return res.data as FolderItem[];
 }
 
-export async function listViewFiles() {
-  const res = await api.get('/drive/views');
+// ── App Types ──────────────────────────────────────────
+
+export async function listAppTypes() {
+  const res = await api.get('/drive/app-types');
+  return res.data as AppType[];
+}
+
+export async function createAppType(data: {
+  slug: string;
+  label: string;
+  icon?: string;
+  renderer?: string;
+  template_content?: string;
+  description?: string;
+}) {
+  const res = await api.post('/drive/app-types', data);
+  return res.data as AppType;
+}
+
+// ── Instances ──────────────────────────────────────────
+
+export async function getFileInstances(fileId: string) {
+  const res = await api.get(`/drive/files/${fileId}/instances`);
   return res.data as FileItem[];
 }
 
-export async function listAllViews() {
-  const res = await api.get('/drive/all-views');
-  return res.data as AllViewsResponse;
+export async function createInstance(data: {
+  source_file_id: string;
+  app_type_slug?: string;
+  app_type_id?: string;
+  name?: string;
+  config?: string;
+  content?: string;
+}) {
+  const res = await api.post('/drive/instances', data);
+  return res.data as FileItem;
 }
 
-export async function getFileLinkedViews(fileId: string) {
-  const res = await api.get(`/drive/files/${fileId}/views`);
-  return res.data as FileViewLink[];
+export async function updateInstanceConfig(instanceId: string, config: string) {
+  const res = await api.put(`/drive/instances/${instanceId}/config`, { config });
+  return res.data as FileItem;
 }
 
-export async function linkViewToFile(fileId: string, viewFileId: string, label: string, position: number = 0) {
-  const res = await api.post('/drive/file-views', {
-    file_id: fileId,
-    view_file_id: viewFileId,
-    label,
-    position,
-  });
-  return res.data as FileViewLink;
-}
-
-export async function unlinkViewFromFile(fileViewId: string) {
-  await api.delete(`/drive/file-views/${fileViewId}`);
-}
+// ── Sharing ────────────────────────────────────────────
 
 export async function shareFile(fileId: string, email: string, permission: string = 'view') {
   const res = await api.post(`/drive/files/${fileId}/share`, { email, permission });
@@ -133,5 +159,15 @@ export async function uploadFile(file: File, folderId?: string) {
 
 export async function updateFileContent(fileId: string, content: string) {
   const res = await api.put(`/drive/files/${fileId}/content`, { content });
-  return res.data as { id: string; name: string; content: string; mime_type: string; is_favorite: boolean };
+  return res.data as {
+    id: string;
+    name: string;
+    content: string;
+    mime_type: string;
+    is_favorite: boolean;
+    is_instance: boolean;
+    app_type_slug: string | null;
+    source_file_id: string | null;
+    instance_config: string | null;
+  };
 }

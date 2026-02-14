@@ -6,19 +6,14 @@ from datetime import datetime, timezone
 import mammoth
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.models.app_type import AppType
 from app.models.file import File, FileVersion
 from app.models.folder import Folder
 from app.models.sharing import FileShare, FolderShare
 from app.models.user import User
-from app.models.view import FileView
 from app.models.workspace import Workspace, WorkspaceMember
-from app.services.view_templates import (
-    generate_table_html,
-    generate_board_html,
-    generate_calendar_html,
-    generate_document_html,
-)
 from app.filestore.base import StorageBackend
 
 
@@ -207,66 +202,155 @@ async def create_file_from_binary(
     return file
 
 
-async def auto_create_views_for_file(
+async def get_app_type_by_slug(
+    db: AsyncSession, slug: str, workspace_id: uuid.UUID | None = None
+) -> AppType | None:
+    """Get an app type by slug. Checks global (workspace_id=NULL) first, then workspace-specific."""
+    result = await db.execute(
+        select(AppType).where(
+            AppType.slug == slug,
+            or_(AppType.workspace_id.is_(None), AppType.workspace_id == workspace_id),
+        ).order_by(AppType.workspace_id.asc())  # NULL (global) first
+    )
+    return result.scalars().first()
+
+
+async def list_app_types(
+    db: AsyncSession, workspace_id: uuid.UUID
+) -> list[AppType]:
+    """List all app types available to a workspace (global + workspace-specific)."""
+    result = await db.execute(
+        select(AppType).where(
+            or_(AppType.workspace_id.is_(None), AppType.workspace_id == workspace_id)
+        ).order_by(AppType.label)
+    )
+    return list(result.scalars().all())
+
+
+async def create_app_type(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    slug: str,
+    label: str,
+    icon: str = "eye",
+    renderer: str = "html-template",
+    template_content: str | None = None,
+    description: str | None = None,
+    created_by_agent: bool = False,
+) -> AppType:
+    """Create a custom app type for a workspace."""
+    app = AppType(
+        workspace_id=workspace_id,
+        slug=slug,
+        label=label,
+        icon=icon,
+        renderer=renderer,
+        template_content=template_content,
+        description=description,
+        created_by_agent=created_by_agent,
+    )
+    db.add(app)
+    await db.flush()
+    return app
+
+
+async def get_instances_for_file(
+    db: AsyncSession, file_id: uuid.UUID
+) -> list[File]:
+    """Get all instances linked to a data file."""
+    result = await db.execute(
+        select(File)
+        .options(selectinload(File.app_type))
+        .where(
+            File.source_file_id == file_id,
+            File.is_instance.is_(True),
+            File.deleted_at.is_(None),
+        )
+        .order_by(File.name)
+    )
+    return list(result.scalars().all())
+
+
+async def create_instance(
+    db: AsyncSession,
+    storage: StorageBackend,
+    source_file: File,
+    app_type: AppType,
+    name: str | None = None,
+    config: str | None = None,
+    content: str | None = None,
+) -> File:
+    """Create an instance file for a data file using an app type."""
+    base = source_file.name.rsplit(".", 1)[0] if "." in source_file.name else source_file.name
+    instance_name = name or f"{base} - {app_type.label}"
+    instance_config = config or "{}"
+
+    # For html-template renderers, store HTML content; for built-in, store config
+    if app_type.renderer == "html-template" and content:
+        content_text = content
+        store_bytes = content.encode("utf-8")
+        mime = "text/html"
+    else:
+        content_text = None
+        store_bytes = instance_config.encode("utf-8")
+        mime = "application/json"
+
+    s_key = f"{source_file.workspace_id}/{uuid.uuid4()}/{instance_name}"
+    await storage.put(s_key, store_bytes)
+
+    instance = File(
+        owner_id=source_file.owner_id,
+        workspace_id=source_file.workspace_id,
+        folder_id=source_file.folder_id,
+        name=instance_name,
+        mime_type=mime,
+        size_bytes=len(store_bytes),
+        storage_key=s_key,
+        file_type="instance",
+        content_text=content_text,
+        is_instance=True,
+        app_type_id=app_type.id,
+        source_file_id=source_file.id,
+        instance_config=instance_config,
+        is_vibe_file=source_file.is_vibe_file,
+        created_by_id=source_file.created_by_id,
+        created_by_agent=source_file.created_by_agent,
+    )
+    db.add(instance)
+    await db.flush()
+    return instance
+
+
+async def auto_create_instances_for_file(
     db: AsyncSession,
     storage: StorageBackend,
     file: File,
-    content: str,
-) -> list[FileView]:
-    """Auto-create HTML view files for a data file and link them."""
+) -> list[File]:
+    """Auto-create default instances for a data file (default viewer + text editor)."""
     ext = file.name.rsplit(".", 1)[-1].lower() if "." in file.name else ""
-    base = file.name.rsplit(".", 1)[0] if "." in file.name else file.name
-    views: list[FileView] = []
+    instances: list[File] = []
 
+    # Determine default viewer app type
+    default_slug: str | None = None
     if ext in ("csv", "tsv") or file.file_type == "spreadsheet":
-        templates = [
-            (f"{base} - Table.html", "Table", generate_table_html(content, base)),
-            (f"{base} - Board.html", "Board", generate_board_html(content, base)),
-            (f"{base} - Calendar.html", "Calendar", generate_calendar_html(content, base)),
-        ]
-    elif ext in ("md", "markdown") or file.file_type == "document":
-        templates = [
-            (f"{base} - Document.html", "Document", generate_document_html(content, base)),
-        ]
-    else:
-        return views
+        default_slug = "table"
+    elif ext in ("md", "markdown", "doc", "docx") or file.file_type == "document":
+        default_slug = "document"
 
-    # Always put generated views in the "Views" system folder (child of Files)
-    views_folder, _ = await ensure_system_folders(db, file.workspace_id, file.owner_id)
+    # Create default viewer instance
+    if default_slug:
+        app_type = await get_app_type_by_slug(db, default_slug, file.workspace_id)
+        if app_type:
+            instance = await create_instance(db, storage, file, app_type)
+            instances.append(instance)
 
-    for position, (name, label, html) in enumerate(templates):
-        html_bytes = html.encode("utf-8")
-        s_key = f"{file.workspace_id}/{uuid.uuid4()}/{name}"
-        await storage.put(s_key, html_bytes)
+    # Create text editor instance
+    editor_type = await get_app_type_by_slug(db, "text-editor", file.workspace_id)
+    if editor_type:
+        instance = await create_instance(db, storage, file, editor_type)
+        instances.append(instance)
 
-        view_file = File(
-            owner_id=file.owner_id,
-            workspace_id=file.workspace_id,
-            folder_id=views_folder.id,
-            name=name,
-            mime_type="text/html",
-            size_bytes=len(html_bytes),
-            storage_key=s_key,
-            file_type="view",
-            content_text=html,
-            is_vibe_file=file.is_vibe_file,
-            created_by_id=file.created_by_id,
-            created_by_agent=file.created_by_agent,
-        )
-        db.add(view_file)
-        await db.flush()
-
-        link = FileView(
-            file_id=file.id,
-            view_file_id=view_file.id,
-            label=label,
-            position=position,
-        )
-        db.add(link)
-        await db.flush()
-        views.append(link)
-
-    return views
+    return instances
 
 
 async def list_drive_files(
@@ -274,7 +358,7 @@ async def list_drive_files(
     workspace_id: uuid.UUID,
     folder_id: uuid.UUID | None = None,
 ) -> list[File]:
-    query = select(File).where(
+    query = select(File).options(selectinload(File.app_type)).where(
         File.workspace_id == workspace_id,
         File.deleted_at.is_(None),
     )
@@ -294,7 +378,9 @@ async def list_all_workspace_files(
 ) -> list[File]:
     """List all non-deleted files in a workspace, regardless of folder."""
     result = await db.execute(
-        select(File).where(
+        select(File)
+        .options(selectinload(File.app_type))
+        .where(
             File.workspace_id == workspace_id,
             File.deleted_at.is_(None),
         ).order_by(File.name)
@@ -342,7 +428,10 @@ async def list_recent_files(
 async def get_file_by_id(
     db: AsyncSession, file_id: uuid.UUID
 ) -> File | None:
-    result = await db.execute(select(File).where(File.id == file_id, File.deleted_at.is_(None)))
+    result = await db.execute(
+        select(File).options(selectinload(File.app_type))
+        .where(File.id == file_id, File.deleted_at.is_(None))
+    )
     return result.scalar_one_or_none()
 
 
@@ -408,41 +497,14 @@ async def ensure_system_folders(
     db: AsyncSession,
     workspace_id: uuid.UUID,
     owner_id: uuid.UUID,
-) -> tuple[Folder, Folder]:
-    """Ensure Views and Files root folders exist. Returns (views_folder, files_folder).
+) -> Folder:
+    """Ensure the Files root folder exists. Returns files_folder.
 
-    Views is a child of Files. Also migrates any orphaned root-level files
-    into the correct folder, and re-parents a root-level Views under Files.
+    Also migrates any orphaned root-level files into the Files folder.
     """
     files = await get_or_create_system_folder(db, workspace_id, owner_id, "Files")
 
-    # Views lives inside Files
-    result = await db.execute(
-        select(Folder).where(
-            Folder.workspace_id == workspace_id,
-            Folder.name == "Views",
-            Folder.parent_id == files.id,
-        )
-    )
-    views = result.scalar_one_or_none()
-    if views is None:
-        # Check for legacy root-level Views folder and re-parent it
-        legacy = await db.execute(
-            select(Folder).where(
-                Folder.workspace_id == workspace_id,
-                Folder.name == "Views",
-                Folder.parent_id.is_(None),
-            )
-        )
-        views = legacy.scalar_one_or_none()
-        if views is not None:
-            views.parent_id = files.id
-            views.path = f"{files.path}Views/"
-            await db.flush()
-        else:
-            views = await create_folder(db, workspace_id, owner_id, "Views", parent_id=files.id)
-
-    # Migrate orphaned root files into the correct system folder
+    # Migrate orphaned root files into the Files folder
     result = await db.execute(
         select(File).where(
             File.workspace_id == workspace_id,
@@ -452,14 +514,11 @@ async def ensure_system_folders(
     )
     orphans = list(result.scalars().all())
     for f in orphans:
-        if f.file_type == "view":
-            f.folder_id = views.id
-        else:
-            f.folder_id = files.id
+        f.folder_id = files.id
     if orphans:
         await db.flush()
 
-    return views, files
+    return files
 
 
 async def create_folder(
@@ -535,83 +594,6 @@ async def list_favorite_folders(
         ).order_by(Folder.name)
     )
     return list(result.scalars().all())
-
-
-async def list_view_files(
-    db: AsyncSession, workspace_id: uuid.UUID
-) -> list[File]:
-    """List files with file_type='view' (HTML view files)."""
-    result = await db.execute(
-        select(File).where(
-            File.workspace_id == workspace_id,
-            File.file_type == "view",
-            File.deleted_at.is_(None),
-        ).order_by(File.name)
-    )
-    return list(result.scalars().all())
-
-
-async def link_view_to_file(
-    db: AsyncSession,
-    file_id: uuid.UUID,
-    view_file_id: uuid.UUID,
-    label: str,
-    position: int = 0,
-) -> FileView:
-    link = FileView(
-        file_id=file_id,
-        view_file_id=view_file_id,
-        label=label,
-        position=position,
-    )
-    db.add(link)
-    await db.flush()
-    return link
-
-
-async def unlink_view_from_file(
-    db: AsyncSession,
-    file_view_id: uuid.UUID,
-) -> None:
-    result = await db.execute(
-        select(FileView).where(FileView.id == file_view_id)
-    )
-    link = result.scalar_one_or_none()
-    if link:
-        await db.delete(link)
-        await db.flush()
-
-
-async def get_linked_views_for_file(
-    db: AsyncSession, file_id: uuid.UUID
-) -> list[FileView]:
-    result = await db.execute(
-        select(FileView)
-        .where(FileView.file_id == file_id)
-        .order_by(FileView.position)
-    )
-    return list(result.scalars().all())
-
-
-async def list_all_views(
-    db: AsyncSession, workspace_id: uuid.UUID
-) -> dict:
-    """Return HTML view files + data files that qualify for built-in views."""
-    html_views = await list_view_files(db, workspace_id)
-
-    builtin_result = await db.execute(
-        select(File).where(
-            File.workspace_id == workspace_id,
-            File.deleted_at.is_(None),
-            File.file_type.in_(["spreadsheet", "document"]),
-        ).order_by(File.name)
-    )
-    builtin_files = list(builtin_result.scalars().all())
-
-    return {
-        "html_views": html_views,
-        "builtin_files": builtin_files,
-    }
 
 
 async def share_file(

@@ -8,7 +8,8 @@ import {
   listSharedWithMe,
   listFavoriteFiles,
   listFavoriteFolders,
-  getFileLinkedViews,
+  listAppTypes,
+  getFileInstances,
 } from '../../api/drive';
 import { useDriveStore } from '../../stores/driveStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -27,14 +28,36 @@ import {
   File as FileIcon,
   Sparkles,
   Star,
-  Eye,
   Plus,
+  Table,
+  Columns3,
+  Calendar,
+  Pencil,
+  Eye,
+  LayoutGrid,
 } from 'lucide-react';
 
 function splitFileName(name: string): { base: string; ext: string } {
   const dot = name.lastIndexOf('.');
   if (dot <= 0) return { base: name, ext: '' };
   return { base: name.slice(0, dot), ext: name.slice(dot) };
+}
+
+function appTypeIcon(slug: string | null, size: number = 14) {
+  switch (slug) {
+    case 'table':
+      return <Table size={size} className="text-green-600 shrink-0" />;
+    case 'board':
+      return <Columns3 size={size} className="text-blue-500 shrink-0" />;
+    case 'calendar':
+      return <Calendar size={size} className="text-orange-500 shrink-0" />;
+    case 'document':
+      return <FileText size={size} className="text-blue-600 shrink-0" />;
+    case 'text-editor':
+      return <Pencil size={size} className="text-gray-500 shrink-0" />;
+    default:
+      return <Eye size={size} className="text-violet-500 shrink-0" />;
+  }
 }
 
 function treeFileIcon(fileType: string) {
@@ -58,19 +81,18 @@ function treeFileIcon(fileType: string) {
 
 function FileNode({ file, depth }: { file: FileItem; depth: number }) {
   const [expanded, setExpanded] = useState(false);
-  const { selectedFileId, selectFile, selectLinkedView } = useDriveStore();
+  const { selectedFileId, selectFile } = useDriveStore();
   const isActive = selectedFileId === file.id;
 
-  // Lazy-load linked views when expanded
-  const { data: linkedViews } = useQuery({
-    queryKey: ['file-linked-views', file.id],
-    queryFn: () => getFileLinkedViews(file.id),
-    enabled: expanded,
+  // Lazy-load instances when expanded (only for non-instance files)
+  const { data: instances } = useQuery({
+    queryKey: ['file-instances', file.id],
+    queryFn: () => getFileInstances(file.id),
+    enabled: expanded && !file.is_instance,
   });
 
-  const hasViews = expanded && linkedViews && linkedViews.length > 0;
-
-  const hasExpandButton = file.file_type !== 'view';
+  const hasInstances = expanded && instances && instances.length > 0;
+  const hasExpandButton = !file.is_instance;
 
   return (
     <div>
@@ -83,12 +105,12 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         role="button"
         tabIndex={0}
-        onClick={() => selectFile(file.id, file.name, file.file_type)}
+        onClick={() => selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, file.file_type);
+          if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type);
         }}
       >
-        {/* Expand arrow on the left — only for non-view files */}
+        {/* Expand arrow on the left — only for data files, not instances */}
         {hasExpandButton ? (
           <button
             type="button"
@@ -101,7 +123,7 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
                 ? 'text-gray-500'
                 : 'text-gray-300 hover:text-gray-500'
             }`}
-            title={expanded ? 'Hide views' : 'Show views'}
+            title={expanded ? 'Hide instances' : 'Show instances'}
           >
             {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
           </button>
@@ -118,23 +140,24 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
         )}
       </div>
 
-      {/* Linked views nested underneath */}
+      {/* Instances nested underneath */}
       {expanded && (
         <div>
-          {hasViews ? (
-            linkedViews.map((view) => (
+          {hasInstances ? (
+            instances.map((inst) => (
               <button
-                key={view.id}
+                key={inst.id}
                 type="button"
-                onClick={() => {
-                  selectFile(file.id, file.name, file.file_type);
-                  selectLinkedView(view.view_file_id);
-                }}
-                className="w-full flex items-center gap-1.5 py-0.5 px-2 text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50 rounded transition"
+                onClick={() => selectFile(inst.id, inst.name, 'instance')}
+                className={`w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition ${
+                  selectedFileId === inst.id
+                    ? 'bg-indigo-50 text-indigo-700 font-medium'
+                    : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50'
+                }`}
                 style={{ paddingLeft: `${depth * 16 + 42}px` }}
               >
-                <Eye size={11} className="shrink-0" />
-                <span className="truncate">{view.label}</span>
+                {appTypeIcon(inst.app_type_slug, 11)}
+                <span className="truncate">{inst.name}</span>
               </button>
             ))
           ) : (
@@ -142,7 +165,7 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
               className="text-[11px] text-gray-400 italic py-0.5"
               style={{ paddingLeft: `${depth * 16 + 42}px` }}
             >
-              No views
+              No instances
             </p>
           )}
         </div>
@@ -167,6 +190,9 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
     queryFn: () => listFiles(folder.id),
     enabled: expanded,
   });
+
+  // Filter out instance files — they show nested under their source file
+  const visibleFiles = childFiles?.filter((f) => !f.is_instance) || [];
 
   return (
     <div>
@@ -214,7 +240,7 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
           {childFolders?.map((child) => (
             <FolderNode key={child.id} folder={child} depth={depth + 1} />
           ))}
-          {childFiles?.map((file) => (
+          {visibleFiles.map((file) => (
             <FileNode key={file.id} file={file} depth={depth + 1} />
           ))}
         </>
@@ -273,6 +299,38 @@ function CollapsibleSection({
       </div>
       {open && <div className="ml-2 pl-1">{children}</div>}
     </div>
+  );
+}
+
+function AppsSection() {
+  const { data: appTypes } = useQuery({
+    queryKey: ['app-types'],
+    queryFn: () => listAppTypes(),
+  });
+
+  return (
+    <CollapsibleSection
+      label="Apps"
+      icon={<LayoutGrid size={10} />}
+      defaultOpen
+    >
+      {appTypes && appTypes.length > 0 ? (
+        appTypes.map((app) => (
+          <div
+            key={app.id}
+            className="flex items-center gap-1.5 py-1 px-2 text-sm text-gray-600 rounded"
+            style={{ paddingLeft: '8px' }}
+          >
+            {appTypeIcon(app.slug, 14)}
+            <span className="truncate">{app.label}</span>
+          </div>
+        ))
+      ) : (
+        <p className="px-3 py-2 text-xs text-gray-400 italic">
+          Loading apps...
+        </p>
+      )}
+    </CollapsibleSection>
   );
 }
 
@@ -386,8 +444,8 @@ function PrivateSection() {
     enabled: isActive && !!filesFolderId,
   });
 
-  // Filter out view-type files — they show nested under their parent
-  const visibleFiles = filesFiles?.filter((f) => f.file_type !== 'view') || [];
+  // Filter out instance files — they show nested under their source file
+  const visibleFiles = filesFiles?.filter((f) => !f.is_instance) || [];
 
   const isRootActive = currentFolderId === filesFolderId;
 
@@ -437,8 +495,8 @@ function SharedSection() {
     queryFn: () => listSharedWithMe(),
   });
 
-  // Filter out view-type files — they show nested under their parent
-  const visibleFiles = sharedFiles?.filter((f) => f.file_type !== 'view') || [];
+  // Filter out instance files
+  const visibleFiles = sharedFiles?.filter((f) => !f.is_instance) || [];
 
   return (
     <div>
@@ -476,6 +534,7 @@ export default function FolderExplorer() {
       {/* Navigation sections */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-2 space-y-0.5">
+          <AppsSection />
           <FavoritesSection />
           <PrivateSection />
           <SharedSection />

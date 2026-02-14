@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileLinkedViews, unlinkViewFromFile, uploadFile } from '../../api/drive';
+import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile } from '../../api/drive';
 import DocxViewer from './DocxViewer';
 import { useDriveStore } from '../../stores/driveStore';
 import { useChatStore } from '../../stores/chatStore';
@@ -175,28 +175,18 @@ function TableViewer({ content }: { content: string }) {
 function MarkdownViewer({ content }: { content: string }) {
   const html = useMemo(() => {
     let result = content;
-    // Headers
     result = result.replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold text-gray-900 mt-4 mb-2">$1</h3>');
     result = result.replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold text-gray-900 mt-5 mb-2">$1</h2>');
     result = result.replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold text-gray-900 mt-6 mb-3">$1</h1>');
-    // Bold and italic
     result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    // Inline code
     result = result.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-pink-600">$1</code>');
-    // Code blocks
     result = result.replace(/```[\s\S]*?\n([\s\S]*?)```/g, '<pre class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm font-mono text-gray-800 overflow-auto my-3">$1</pre>');
-    // Links
     result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-indigo-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
-    // Unordered lists
     result = result.replace(/^[*-] (.+)$/gm, '<li class="ml-4 list-disc text-gray-800">$1</li>');
-    // Ordered lists
     result = result.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-gray-800">$1</li>');
-    // Horizontal rules
     result = result.replace(/^---$/gm, '<hr class="my-4 border-gray-200" />');
-    // Paragraphs (double newlines)
     result = result.replace(/\n\n/g, '</p><p class="text-sm text-gray-800 mb-3">');
-    // Single newlines to <br>
     result = result.replace(/\n/g, '<br />');
     return `<p class="text-sm text-gray-800 mb-3">${result}</p>`;
   }, [content]);
@@ -212,7 +202,6 @@ function MarkdownViewer({ content }: { content: string }) {
 function KanbanViewer({ content }: { content: string }) {
   const { headers, rows } = useMemo(() => parseCSV(content), [content]);
 
-  // Find a "status" column (status, stage, state, column)
   const statusIdx = useMemo(() => {
     const candidates = ['status', 'stage', 'state', 'column', 'category'];
     const idx = headers.findIndex((h) =>
@@ -272,7 +261,6 @@ function KanbanViewer({ content }: { content: string }) {
 function CalendarViewer({ content }: { content: string }) {
   const { headers, rows } = useMemo(() => parseCSV(content), [content]);
 
-  // Find a date column
   const dateIdx = useMemo(() => {
     const candidates = ['date', 'due', 'due_date', 'start', 'start_date', 'created', 'deadline'];
     const idx = headers.findIndex((h) =>
@@ -283,7 +271,6 @@ function CalendarViewer({ content }: { content: string }) {
 
   const nameIdx = 0;
 
-  // Group by month-year
   const months = useMemo(() => {
     if (dateIdx < 0) return new Map<string, { date: Date; row: string[] }[]>();
     const map = new Map<string, { date: Date; row: string[] }[]>();
@@ -294,7 +281,6 @@ function CalendarViewer({ content }: { content: string }) {
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push({ date: d, row });
     }
-    // Sort entries within each month
     for (const [, entries] of map) {
       entries.sort((a, b) => a.date.getTime() - b.date.getTime());
     }
@@ -365,180 +351,114 @@ function HtmlViewRenderer({ content }: { content: string }) {
   );
 }
 
+// ── Instance-aware renderer ─────────────────────────────
+
+function InstanceRenderer({
+  appTypeSlug,
+  sourceContent,
+  instanceContent,
+  fileId,
+  fileName,
+}: {
+  appTypeSlug: string | null;
+  sourceContent: string;
+  instanceContent: string | null;
+  fileId: string;
+  fileName: string;
+}) {
+  const isCode = /\.(py|js|ts|tsx|jsx|rb|go|rs|java|c|cpp|h|css|sh|yml|yaml|toml|sql)$/.test(fileName);
+
+  switch (appTypeSlug) {
+    case 'table':
+      return <TableViewer content={sourceContent} />;
+    case 'board':
+      return <KanbanViewer content={sourceContent} />;
+    case 'calendar':
+      return <CalendarViewer content={sourceContent} />;
+    case 'document': {
+      const ext = fileName.split('.').pop()?.toLowerCase() || '';
+      if (ext === 'doc' || ext === 'docx') {
+        return <DocxViewer fileId={fileId} content={sourceContent} fileName={fileName} />;
+      }
+      return <MarkdownViewer content={sourceContent} />;
+    }
+    case 'text-editor':
+      return <RawViewer content={sourceContent} isCode={isCode} />;
+    default:
+      // Custom HTML template app type
+      if (instanceContent) {
+        return (
+          <div className="h-full -m-5">
+            <HtmlViewRenderer content={instanceContent} />
+          </div>
+        );
+      }
+      return <RawViewer content={sourceContent} isCode={isCode} />;
+  }
+}
+
 // ── View Mode Tabs ──────────────────────────────────────
 
-interface ViewModeOption {
-  mode: FileViewMode;
+interface ViewTab {
+  id: string;
   label: string;
   icon: React.ReactNode;
-  description: string;
-  linkedViewFileId?: string;
-  fileViewId?: string;
+  instanceId?: string;
+  mode?: FileViewMode;
 }
 
-/** The single default view for a file type (the one shown automatically). */
-function getDefaultViewModeOption(fileName: string, fileType: string): ViewModeOption {
-  const ext = fileName.split('.').pop()?.toLowerCase() || '';
-  if (ext === 'doc' || ext === 'docx')
-    return { mode: 'docx', label: 'Document', icon: <FileType size={14} />, description: 'Word document' };
-  if (ext === 'csv' || ext === 'tsv' || fileType === 'spreadsheet')
-    return { mode: 'table', label: 'Table', icon: <Table size={14} />, description: 'Spreadsheet' };
-  if (ext === 'md' || ext === 'markdown' || fileType === 'document')
-    return { mode: 'document', label: 'Document', icon: <FileType size={14} />, description: 'Rich text' };
-  if (ext === 'html' || ext === 'htm' || fileType === 'view')
-    return { mode: 'html-view', label: 'Preview', icon: <Eye size={14} />, description: 'Live render' };
-  return { mode: 'edit', label: 'Text', icon: <Pencil size={14} />, description: 'Raw source' };
-}
-
-/** Built-in views that can be added (excludes the default). */
-function getAddableBuiltinModes(fileName: string, fileType: string): ViewModeOption[] {
-  const ext = fileName.split('.').pop()?.toLowerCase() || '';
-  const all: ViewModeOption[] = [];
-
-  all.push({ mode: 'edit', label: 'Text', icon: <Pencil size={14} />, description: 'Raw source' });
-
-  if (ext === 'md' || ext === 'markdown' || ext === 'txt' || ext === 'rst' || fileType === 'document')
-    all.push({ mode: 'document', label: 'Document', icon: <FileType size={14} />, description: 'Rich text' });
-
-  if (ext === 'csv' || ext === 'tsv' || fileType === 'spreadsheet') {
-    all.push({ mode: 'table', label: 'Table', icon: <Table size={14} />, description: 'Spreadsheet' });
-    all.push({ mode: 'kanban', label: 'Board', icon: <Columns3 size={14} />, description: 'Kanban board' });
-    all.push({ mode: 'calendar', label: 'Calendar', icon: <Calendar size={14} />, description: 'Timeline' });
+function appTypeToIcon(slug: string | null, size: number = 14) {
+  switch (slug) {
+    case 'table': return <Table size={size} />;
+    case 'board': return <Columns3 size={size} />;
+    case 'calendar': return <Calendar size={size} />;
+    case 'document': return <FileType size={size} />;
+    case 'text-editor': return <Pencil size={size} />;
+    default: return <Eye size={size} />;
   }
-
-  if (ext === 'html' || ext === 'htm' || fileType === 'view')
-    all.push({ mode: 'html-view', label: 'Preview', icon: <Eye size={14} />, description: 'Live render' });
-
-  const defaultMode = getDefaultViewModeOption(fileName, fileType).mode;
-  return all.filter((m) => m.mode !== defaultMode);
 }
 
-function ViewModeBar({
-  modes,
-  active,
-  activeLinkedViewId,
-  onChange,
-  onRemove,
-  addableBuiltins,
-  onAddBuiltin,
+function InstanceTabBar({
+  instances,
+  activeInstanceId,
+  onSelectInstance,
   onCreateCustom,
-  isDataFile,
 }: {
-  modes: ViewModeOption[];
-  active: FileViewMode;
-  activeLinkedViewId: string | null;
-  onChange: (mode: FileViewMode, linkedViewFileId?: string) => void;
-  onRemove?: (mode: string, fileViewId?: string) => void;
-  addableBuiltins: ViewModeOption[];
-  onAddBuiltin: (mode: ViewModeOption) => void;
+  instances: FileItem[];
+  activeInstanceId: string | null;
+  onSelectInstance: (instanceId: string) => void;
   onCreateCustom: () => void;
-  isDataFile: boolean;
 }) {
-  const [showAddMenu, setShowAddMenu] = useState(false);
-
-  // Which built-in modes are already shown as tabs?
-  const shownModes = new Set(modes.filter((m) => !m.linkedViewFileId).map((m) => m.mode));
-  const availableBuiltins = addableBuiltins.filter((m) => !shownModes.has(m.mode));
-
-  const hasAddOptions = availableBuiltins.length > 0 || isDataFile;
-
   return (
     <div className="flex items-center gap-0.5 px-4 py-1.5 shrink-0">
-      {modes.map(({ mode, label, icon, description, linkedViewFileId, fileViewId }, idx) => {
-        const isActive = linkedViewFileId
-          ? (active === 'html-view' && activeLinkedViewId === linkedViewFileId)
-          : (active === mode && !activeLinkedViewId);
-        const isDefault = idx === 0;
-
+      {instances.map((inst) => {
+        const isActive = inst.id === activeInstanceId;
         return (
           <button
-            key={linkedViewFileId || mode}
+            key={inst.id}
             type="button"
-            onClick={() => onChange(mode, linkedViewFileId)}
-            title={description}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap group ${
+            onClick={() => onSelectInstance(inst.id)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap ${
               isActive
                 ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200'
                 : 'text-gray-500 hover:text-gray-800 hover:bg-white/60 border border-transparent'
             }`}
           >
-            {icon}
-            {label}
-            {!isDefault && onRemove && (
-              <span
-                role="button"
-                tabIndex={-1}
-                onClick={(e) => { e.stopPropagation(); onRemove(mode, fileViewId); }}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onRemove(mode, fileViewId); } }}
-                className="ml-0.5 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition"
-                title="Remove this view"
-              >
-                <X size={10} />
-              </span>
-            )}
+            {appTypeToIcon(inst.app_type_slug)}
+            {inst.name}
           </button>
         );
       })}
 
-      {/* Add view button */}
-      {hasAddOptions && (
-        <>
-          <button
-            type="button"
-            onClick={() => setShowAddMenu(!showAddMenu)}
-            className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap ${
-              showAddMenu
-                ? 'bg-white text-indigo-600 shadow-sm border border-indigo-200'
-                : 'text-gray-400 hover:text-gray-600 hover:bg-white/60 border border-transparent'
-            }`}
-            title="Add view"
-          >
-            <Plus size={13} />
-            <span className="text-[11px]">Add view</span>
-          </button>
-
-          {showAddMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowAddMenu(false)}
-                onKeyDown={(e) => { if (e.key === 'Escape') setShowAddMenu(false); }}
-                role="button"
-                tabIndex={-1}
-                aria-label="Close menu"
-              />
-              <div className="absolute left-4 top-full mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1.5">
-                {availableBuiltins.map((m) => (
-                  <button
-                    key={m.mode}
-                    type="button"
-                    onClick={() => { onAddBuiltin(m); setShowAddMenu(false); }}
-                    className="w-full text-left flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
-                  >
-                    <span className="text-gray-400">{m.icon}</span>
-                    <span className="flex-1">{m.label}</span>
-                    <span className="text-[10px] text-gray-400">{m.description}</span>
-                  </button>
-                ))}
-
-                {isDataFile && (
-                  <>
-                    {availableBuiltins.length > 0 && <div className="border-t border-gray-100 my-1" />}
-                    <button
-                      type="button"
-                      onClick={() => { onCreateCustom(); setShowAddMenu(false); }}
-                      className="w-full text-left flex items-center gap-2.5 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 transition font-medium"
-                    >
-                      <Sparkles size={14} />
-                      Custom view with AI...
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-        </>
-      )}
+      <button
+        type="button"
+        onClick={onCreateCustom}
+        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap text-gray-400 hover:text-gray-600 hover:bg-white/60 border border-transparent"
+        title="Create custom view with AI"
+      >
+        <Sparkles size={13} />
+        <span className="text-[11px]">Custom</span>
+      </button>
     </div>
   );
 }
@@ -546,12 +466,10 @@ function ViewModeBar({
 // ── FileViewer ──────────────────────────────────────────
 
 function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) {
-  const { clearSelectedFile, viewMode, setViewMode, selectedFileType, linkedViewFileId, selectLinkedView } = useDriveStore();
+  const { clearSelectedFile, viewMode, setViewMode, selectedFileType, selectFile } = useDriveStore();
   const { toggleChatPanel, chatPanelOpen } = useUIStore();
   const queryClient = useQueryClient();
 
-  // Extra built-in tabs the user has added via the "+" menu
-  const [extraBuiltinModes, setExtraBuiltinModes] = useState<ViewModeOption[]>([]);
   const [showCustomViewDialog, setShowCustomViewDialog] = useState(false);
   const [customViewPrompt, setCustomViewPrompt] = useState('');
   const { setPendingPrompt } = useChatStore();
@@ -561,17 +479,25 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
     queryFn: () => getFileContent(fileId),
   });
 
-  // Fetch linked HTML views for this file
-  const { data: linkedViews } = useQuery({
-    queryKey: ['file-linked-views', fileId],
-    queryFn: () => getFileLinkedViews(fileId),
+  // Determine if this is an instance or a data file
+  const isInstance = fileData?.is_instance || selectedFileType === 'instance';
+  const sourceFileId = fileData?.source_file_id;
+
+  // If viewing an instance, fetch its source file content
+  const { data: sourceData } = useQuery({
+    queryKey: ['file-content', sourceFileId],
+    queryFn: () => getFileContent(sourceFileId!),
+    enabled: isInstance && !!sourceFileId,
   });
 
-  // Fetch the linked view file's content when active
-  const { data: linkedViewData } = useQuery({
-    queryKey: ['file-content', linkedViewFileId],
-    queryFn: () => getFileContent(linkedViewFileId!),
-    enabled: !!linkedViewFileId,
+  // Fetch sibling instances (for tab bar)
+  // If this is an instance, get instances of the source file
+  // If this is a data file, get its own instances
+  const instancesForFileId = isInstance ? sourceFileId : fileId;
+  const { data: siblingInstances } = useQuery({
+    queryKey: ['file-instances', instancesForFileId],
+    queryFn: () => getFileInstances(instancesForFileId!),
+    enabled: !!instancesForFileId,
   });
 
   const favMutation = useMutation({
@@ -581,17 +507,6 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
       queryClient.invalidateQueries({ queryKey: ['favorite-files'] });
       queryClient.invalidateQueries({ queryKey: ['shared-files'] });
-    },
-  });
-
-  const unlinkMutation = useMutation({
-    mutationFn: (fileViewId: string) => unlinkViewFromFile(fileViewId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['file-linked-views', fileId] });
-      queryClient.invalidateQueries({ queryKey: ['all-views'] });
-      if (linkedViewFileId) {
-        setViewMode('edit');
-      }
     },
   });
 
@@ -606,51 +521,11 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
     /\.(py|js|ts|tsx|jsx|rb|go|rs|java|c|cpp|h|css|sh|yml|yaml|toml|sql)$/.test(fileData.name)
   );
 
-  // Build tab list: Edit + default + user-added builtins + custom linked views
-  const defaultMode = getDefaultViewModeOption(actualName, detectedType);
-  const editMode: ViewModeOption = { mode: 'edit', label: 'Text', icon: <Pencil size={14} />, description: 'Raw source' };
-  const baseModes = defaultMode.mode === 'edit' ? [defaultMode] : [editMode, defaultMode];
-  const addableBuiltins = getAddableBuiltinModes(actualName, detectedType);
-
-  // Filter out auto-generated linked views (whose labels match built-in mode names)
-  const builtinLabels = new Set(['Table', 'Board', 'Calendar', 'Document', 'Edit', 'Preview']);
-  const customLinkedViews: ViewModeOption[] = (linkedViews || [])
-    .filter((lv) => !builtinLabels.has(lv.label))
-    .map((lv) => ({
-      mode: 'html-view' as FileViewMode,
-      label: lv.label,
-      icon: <Eye size={14} />,
-      description: lv.view_file_name || lv.label,
-      linkedViewFileId: lv.view_file_id,
-      fileViewId: lv.id,
-    }));
-  const shownModes = [...baseModes, ...extraBuiltinModes, ...customLinkedViews];
-
-  const isDataFile = ['spreadsheet', 'document', 'code', 'other'].includes(detectedType) && detectedType !== 'view';
-
-  const handleViewModeChange = (mode: FileViewMode, lvFileId?: string) => {
-    if (lvFileId) {
-      selectLinkedView(lvFileId);
-    } else {
-      setViewMode(mode);
-    }
-  };
-
-  const handleAddBuiltin = (opt: ViewModeOption) => {
-    setExtraBuiltinModes((prev) => [...prev, opt]);
-    setViewMode(opt.mode);
-  };
-
-  const handleRemoveTab = (mode: string, fileViewId?: string) => {
-    if (fileViewId) {
-      // Unlink a linked HTML view
-      unlinkMutation.mutate(fileViewId);
-    } else {
-      // Remove a user-added built-in tab
-      setExtraBuiltinModes((prev) => prev.filter((m) => m.mode !== mode));
-      if (viewMode === mode) {
-        setViewMode(defaultMode.mode);
-      }
+  const handleSelectInstance = (instanceId: string) => {
+    // Find the instance to get its name
+    const inst = siblingInstances?.find((i) => i.id === instanceId);
+    if (inst) {
+      selectFile(inst.id, inst.name, 'instance');
     }
   };
 
@@ -661,11 +536,100 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
   const handleSubmitCustomView = () => {
     if (!customViewPrompt.trim()) return;
-    const prompt = `Create a custom HTML view for the file "${actualName}" (ID: ${fileId}) that: ${customViewPrompt.trim()}. Read the file content first, then create an HTML view file and link it to this file.`;
+    const targetFileId = isInstance ? sourceFileId : fileId;
+    const targetName = isInstance && sourceData ? sourceData.name : actualName;
+    const prompt = `Create a custom HTML view for the file "${targetName}" (ID: ${targetFileId}) that: ${customViewPrompt.trim()}. Read the file content first, then create an instance for this file.`;
     setPendingPrompt(prompt);
     if (!chatPanelOpen) toggleChatPanel();
     setShowCustomViewDialog(false);
     setCustomViewPrompt('');
+  };
+
+  // Determine what to render
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: `${50 + Math.random() * 40}%` }} />
+          ))}
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-center py-16">
+          <p className="text-red-500 text-sm">Failed to load file content</p>
+          <button
+            type="button"
+            onClick={clearSelectedFile}
+            className="mt-2 text-sm text-indigo-600 hover:underline"
+          >
+            Go back
+          </button>
+        </div>
+      );
+    }
+
+    // Instance rendering: use the source file's content with the app type's renderer
+    if (isInstance && fileData) {
+      const content = sourceData?.content || '';
+      return (
+        <InstanceRenderer
+          appTypeSlug={fileData.app_type_slug}
+          sourceContent={content}
+          instanceContent={fileData.content}
+          fileId={sourceFileId || fileId}
+          fileName={sourceData?.name || actualName}
+        />
+      );
+    }
+
+    // Regular data file rendering (when clicked directly, not via instance)
+    if (!fileData?.content) {
+      return (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">File Information</h3>
+          <dl className="space-y-2 text-sm">
+            <div className="flex gap-2">
+              <dt className="text-gray-500 w-24">Name:</dt>
+              <dd className="text-gray-900">{fileData?.name}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-gray-500 w-24">Type:</dt>
+              <dd className="text-gray-900">{fileData?.mime_type}</dd>
+            </div>
+          </dl>
+        </div>
+      );
+    }
+
+    // Direct data file rendering based on viewMode
+    const ext = actualName.split('.').pop()?.toLowerCase() || '';
+    if (viewMode === 'docx') {
+      return <DocxViewer fileId={fileId} content={fileData.content} fileName={actualName} />;
+    }
+    if (viewMode === 'table') {
+      return <TableViewer content={fileData.content} />;
+    }
+    if (viewMode === 'document') {
+      return <MarkdownViewer content={fileData.content} />;
+    }
+    if (viewMode === 'kanban') {
+      return <KanbanViewer content={fileData.content} />;
+    }
+    if (viewMode === 'calendar') {
+      return <CalendarViewer content={fileData.content} />;
+    }
+    if (viewMode === 'html-view') {
+      return (
+        <div className="h-full -m-5">
+          <HtmlViewRenderer content={fileData.content} />
+        </div>
+      );
+    }
+    return <RawViewer content={fileData.content} isCode={!!isCode} />;
   };
 
   return (
@@ -682,7 +646,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
             <ArrowLeft size={16} />
           </button>
           <div className="flex items-center gap-2 min-w-0">
-            {fileData && fileIcon(detectedType)}
+            {fileData && fileIcon(isInstance ? (detectedType) : detectedType)}
             <span className="text-sm font-semibold text-gray-900 truncate">
               {splitFileName(actualName).base}
               <span className="text-[0.8em] font-normal opacity-40">{splitFileName(actualName).ext}</span>
@@ -711,20 +675,17 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
         </button>
       </div>
 
-      {/* View mode tabs */}
-      <div className="relative flex items-center border-b border-gray-200 bg-gray-50/80 shrink-0">
-        <ViewModeBar
-          modes={shownModes}
-          active={viewMode}
-          activeLinkedViewId={linkedViewFileId}
-          onChange={handleViewModeChange}
-          onRemove={handleRemoveTab}
-          addableBuiltins={addableBuiltins}
-          onAddBuiltin={handleAddBuiltin}
-          onCreateCustom={handleCreateCustom}
-          isDataFile={isDataFile}
-        />
-      </div>
+      {/* Instance tab bar — shows sibling instances */}
+      {siblingInstances && siblingInstances.length > 0 && (
+        <div className="relative flex items-center border-b border-gray-200 bg-gray-50/80 shrink-0">
+          <InstanceTabBar
+            instances={siblingInstances}
+            activeInstanceId={isInstance ? fileId : null}
+            onSelectInstance={handleSelectInstance}
+            onCreateCustom={handleCreateCustom}
+          />
+        </div>
+      )}
 
       {/* Custom view with AI dialog */}
       {showCustomViewDialog && (
@@ -771,58 +732,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-5">
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: `${50 + Math.random() * 40}%` }} />
-            ))}
-          </div>
-        ) : error ? (
-          <div className="text-center py-16">
-            <p className="text-red-500 text-sm">Failed to load file content</p>
-            <button
-              type="button"
-              onClick={clearSelectedFile}
-              className="mt-2 text-sm text-indigo-600 hover:underline"
-            >
-              Go back
-            </button>
-          </div>
-        ) : viewMode === 'docx' && fileData?.content ? (
-          <DocxViewer fileId={fileId} content={fileData.content} fileName={actualName} />
-        ) : viewMode === 'html-view' && linkedViewFileId && linkedViewData?.content ? (
-          <div className="h-full -m-5">
-            <HtmlViewRenderer content={linkedViewData.content} />
-          </div>
-        ) : viewMode === 'table' && fileData?.content ? (
-          <TableViewer content={fileData.content} />
-        ) : viewMode === 'document' && fileData?.content ? (
-          <MarkdownViewer content={fileData.content} />
-        ) : viewMode === 'kanban' && fileData?.content ? (
-          <KanbanViewer content={fileData.content} />
-        ) : viewMode === 'calendar' && fileData?.content ? (
-          <CalendarViewer content={fileData.content} />
-        ) : viewMode === 'html-view' && fileData?.content ? (
-          <div className="h-full -m-5">
-            <HtmlViewRenderer content={fileData.content} />
-          </div>
-        ) : fileData?.content ? (
-          <RawViewer content={fileData.content} isCode={!!isCode} />
-        ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">File Information</h3>
-            <dl className="space-y-2 text-sm">
-              <div className="flex gap-2">
-                <dt className="text-gray-500 w-24">Name:</dt>
-                <dd className="text-gray-900">{fileData?.name}</dd>
-              </div>
-              <div className="flex gap-2">
-                <dt className="text-gray-500 w-24">Type:</dt>
-                <dd className="text-gray-900">{fileData?.mime_type}</dd>
-              </div>
-            </dl>
-          </div>
-        )}
+        {renderContent()}
       </div>
     </div>
   );
@@ -903,8 +813,8 @@ export default function Drive() {
     return <FileViewer fileId={selectedFileId} fileName={selectedFileName || ''} />;
   }
 
-  // Filter out view-type files — they show nested under their parent in the sidebar
-  const visibleFiles = files?.filter((f) => f.file_type !== 'view') || [];
+  // Filter out instance files — they show nested under their source file
+  const visibleFiles = files?.filter((f) => !f.is_instance) || [];
 
   const isLoading = filesLoading || foldersLoading;
   const title = isShared ? 'Shared' : 'Private';

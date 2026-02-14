@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 
 type DriveView = 'private' | 'shared';
-type FileViewMode = 'edit' | 'document' | 'table' | 'kanban' | 'calendar' | 'html-view' | 'docx';
+type FileViewMode = 'edit' | 'document' | 'table' | 'kanban' | 'calendar' | 'html-view' | 'docx' | 'instance';
 
 function getDefaultViewMode(fileName: string, fileType?: string): FileViewMode {
+  if (fileType === 'instance') return 'instance';
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   if (ext === 'doc' || ext === 'docx') return 'docx';
   if (ext === 'csv' || ext === 'tsv' || fileType === 'spreadsheet') return 'table';
@@ -25,7 +26,6 @@ interface DriveState {
   selectedFileName: string | null;
   selectedFileType: string | null;
   viewMode: FileViewMode;
-  linkedViewFileId: string | null;
   setView: (view: DriveView) => void;
   navigateToFolder: (folderId: string, folderName: string) => void;
   navigateToBreadcrumb: (index: number) => void;
@@ -33,7 +33,6 @@ interface DriveState {
   selectFile: (fileId: string, fileName: string, fileType?: string) => void;
   clearSelectedFile: () => void;
   setViewMode: (mode: FileViewMode) => void;
-  selectLinkedView: (viewFileId: string) => void;
 }
 
 export type { FileViewMode };
@@ -46,7 +45,6 @@ export const useDriveStore = create<DriveState>((set) => ({
   selectedFileName: null,
   selectedFileType: null,
   viewMode: 'edit',
-  linkedViewFileId: null,
 
   setView: (view) =>
     set({
@@ -56,7 +54,6 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
-      linkedViewFileId: null,
       breadcrumbs: [{ id: null, name: view === 'shared' ? 'Shared' : 'Private' }],
     }),
 
@@ -67,7 +64,6 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
-      linkedViewFileId: null,
       breadcrumbs: [...s.breadcrumbs, { id: folderId, name: folderName }],
     })),
 
@@ -78,7 +74,6 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
-      linkedViewFileId: null,
       breadcrumbs: s.breadcrumbs.slice(0, index + 1),
     })),
 
@@ -90,7 +85,6 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
-      linkedViewFileId: null,
       breadcrumbs: [{ id: homeFolderId || null, name: 'Private' }],
     }),
 
@@ -100,7 +94,6 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: fileName,
       selectedFileType: fileType || null,
       viewMode: getDefaultViewMode(fileName, fileType || undefined),
-      linkedViewFileId: null,
     }),
 
   clearSelectedFile: () =>
@@ -109,12 +102,8 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
-      linkedViewFileId: null,
     }),
 
   setViewMode: (mode) =>
-    set({ viewMode: mode, linkedViewFileId: null }),
-
-  selectLinkedView: (viewFileId) =>
-    set({ viewMode: 'html-view', linkedViewFileId: viewFileId }),
+    set({ viewMode: mode }),
 }));

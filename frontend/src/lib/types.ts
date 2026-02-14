@@ -13,7 +13,6 @@ export interface Drive {
   id: string;
   name: string;
   owner_id: string;
-  views_folder_id: string | null;
   files_folder_id: string | null;
 }
 
@@ -29,8 +28,23 @@ export interface FileItem {
   is_vibe_file: boolean;
   is_favorite: boolean;
   created_by_agent: boolean;
+  is_instance: boolean;
+  app_type_id: string | null;
+  app_type_slug: string | null;
+  source_file_id: string | null;
+  instance_config: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AppType {
+  id: string;
+  slug: string;
+  label: string;
+  icon: string;
+  renderer: string;
+  description: string | null;
+  created_at: string;
 }
 
 export interface FolderItem {
@@ -73,20 +87,6 @@ export interface ChatMessage {
   content: string;
   created_at: string;
   isStreaming?: boolean;
-}
-
-export interface FileViewLink {
-  id: string;
-  file_id: string;
-  view_file_id: string;
-  label: string;
-  position: number;
-  view_file_name: string | null;
-}
-
-export interface AllViewsResponse {
-  html_views: FileItem[];
-  builtin_files: FileItem[];
 }
 
 export interface WSEvent {

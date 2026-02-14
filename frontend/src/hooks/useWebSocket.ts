@@ -115,10 +115,8 @@ export function useWebSocket() {
         case 'file.deleted':
           qc.invalidateQueries({ queryKey: ['drive-files'] });
           qc.invalidateQueries({ queryKey: ['recent-files'] });
-          qc.invalidateQueries({ queryKey: ['view-files'] });
           qc.invalidateQueries({ queryKey: ['favorite-files'] });
-          qc.invalidateQueries({ queryKey: ['file-linked-views'] });
-          qc.invalidateQueries({ queryKey: ['all-views'] });
+          qc.invalidateQueries({ queryKey: ['file-instances'] });
           // Refresh file content if updated
           if (data.type === 'file.updated' && data.payload?.file_id) {
             qc.invalidateQueries({ queryKey: ['file-content', data.payload.file_id] });
@@ -137,6 +135,10 @@ export function useWebSocket() {
         case 'folder.deleted':
           qc.invalidateQueries({ queryKey: ['drive-folders'] });
           qc.invalidateQueries({ queryKey: ['favorite-folders'] });
+          break;
+
+        case 'app_type.created':
+          qc.invalidateQueries({ queryKey: ['app-types'] });
           break;
 
         case 'error':

@@ -22,6 +22,11 @@ class FileResponse(BaseModel):
     is_vibe_file: bool
     is_favorite: bool
     created_by_agent: bool
+    is_instance: bool = False
+    app_type_id: uuid.UUID | None = None
+    app_type_slug: str | None = None
+    source_file_id: uuid.UUID | None = None
+    instance_config: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -38,6 +43,10 @@ class FileContentResponse(BaseModel):
     content: str
     mime_type: str
     is_favorite: bool = False
+    is_instance: bool = False
+    app_type_slug: str | None = None
+    source_file_id: uuid.UUID | None = None
+    instance_config: str | None = None
 
 
 class FolderCreate(BaseModel):
@@ -78,28 +87,40 @@ class DriveResponse(BaseModel):
     id: uuid.UUID
     name: str
     owner_id: uuid.UUID
-    views_folder_id: uuid.UUID | None = None
     files_folder_id: uuid.UUID | None = None
 
 
-class FileViewCreate(BaseModel):
-    file_id: uuid.UUID
-    view_file_id: uuid.UUID
-    label: str
-    position: int = 0
+# ── App Types & Instances ──────────────────────────────
 
-
-class FileViewResponse(BaseModel):
+class AppTypeResponse(BaseModel):
     id: uuid.UUID
-    file_id: uuid.UUID
-    view_file_id: uuid.UUID
+    slug: str
     label: str
-    position: int
-    view_file_name: str | None = None
+    icon: str
+    renderer: str
+    description: str | None = None
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
-class AllViewsResponse(BaseModel):
-    html_views: list[FileResponse]
-    builtin_files: list[FileResponse]
+class AppTypeCreate(BaseModel):
+    slug: str
+    label: str
+    icon: str = "eye"
+    renderer: str = "html-template"
+    template_content: str | None = None
+    description: str | None = None
+
+
+class InstanceCreate(BaseModel):
+    source_file_id: uuid.UUID | None = None
+    app_type_id: uuid.UUID | None = None
+    app_type_slug: str | None = None
+    name: str | None = None
+    config: str | None = None
+    content: str | None = None
+
+
+class InstanceConfigUpdate(BaseModel):
+    config: str

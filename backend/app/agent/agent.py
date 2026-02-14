@@ -35,23 +35,35 @@ class PlainerAgent:
 
     async def _build_system_prompt(self) -> str:
         all_files = await file_service.list_all_workspace_files(self.db, self.workspace_id)
-        data_files = [f for f in all_files if f.file_type != "view"]
-        view_files = [f for f in all_files if f.file_type == "view"]
+        data_files = [f for f in all_files if not f.is_instance and f.file_type != "view"]
+        instances = [f for f in all_files if f.is_instance]
+
+        # Build file listing with instances nested under their source files
+        instance_map: dict[uuid.UUID, list] = {}
+        for inst in instances:
+            if inst.source_file_id:
+                instance_map.setdefault(inst.source_file_id, []).append(inst)
 
         parts = []
-        if data_files:
-            parts.append("My Files/\n" + "\n".join(
-                f"  - {f.name} (ID: {f.id}, type: {f.file_type})" for f in data_files
-            ))
-        if view_files:
-            parts.append("My Files/Views/\n" + "\n".join(
-                f"  - {f.name} (ID: {f.id})" for f in view_files
-            ))
-        listing = "\n\n".join(parts) if parts else "(no files yet)"
+        for f in data_files:
+            parts.append(f"  - {f.name} (ID: {f.id}, type: {f.file_type})")
+            for inst in instance_map.get(f.id, []):
+                slug = inst.app_type.slug if inst.app_type else "unknown"
+                parts.append(f"      ↳ {inst.name} (ID: {inst.id}, app: {slug})")
+
+        listing = "My Files/\n" + "\n".join(parts) if parts else "(no files yet)"
+
+        # Build app types listing
+        app_types = await file_service.list_app_types(self.db, self.workspace_id)
+        app_listing = "\n".join(
+            f"  - {a.label} (slug: {a.slug}, renderer: {a.renderer})"
+            for a in app_types
+        ) if app_types else "(none)"
 
         return SYSTEM_PROMPT.format(
             workspace_name=self.workspace_name,
             file_listing=listing,
+            app_types=app_listing,
         )
 
     async def _ws_send(self, event_type: str, payload: dict):
@@ -187,21 +199,24 @@ class PlainerAgent:
             return "Listing files"
         elif tool_name == "delete_file":
             return "Deleting file"
-        elif tool_name == "link_view":
-            return f"Linking view: {tool_input.get('label', 'view')}"
+        elif tool_name == "create_instance":
+            return f"Creating {tool_input.get('app_type_slug', '')} instance"
+        elif tool_name == "create_app_type":
+            return f"Creating app: {tool_input.get('label', 'custom')}"
+        elif tool_name == "update_instance":
+            return "Updating instance"
+        elif tool_name == "promote_instance_to_app":
+            return f"Promoting to app: {tool_input.get('label', 'custom')}"
         elif tool_name == "toggle_favorite":
             return "Toggling favorite"
         return tool_name
 
     async def _execute_tool(self, tool_name: str, tool_input: dict) -> str:
         if tool_name == "create_file":
-            # Determine target folder: Views folder for .html view files, Files folder for data files
-            views_folder, files_folder = await file_service.ensure_system_folders(
+            files_folder = await file_service.ensure_system_folders(
                 self.db, self.workspace_id, self.owner_id
             )
             name = tool_input["name"]
-            is_view = name.lower().endswith((".html", ".htm"))
-            target_folder = views_folder if is_view else files_folder
 
             file = await file_service.create_file_from_content(
                 db=self.db,
@@ -210,8 +225,13 @@ class PlainerAgent:
                 name=name,
                 content=tool_input["content"],
                 owner_id=self.owner_id,
-                folder_id=target_folder.id,
+                folder_id=files_folder.id,
                 created_by_agent=True,
+            )
+
+            # Auto-create instances for data files
+            await file_service.auto_create_instances_for_file(
+                self.db, self.storage, file,
             )
             await self.db.commit()
 
@@ -249,20 +269,20 @@ class PlainerAgent:
             all_files = await file_service.list_all_workspace_files(self.db, self.workspace_id)
             if not all_files:
                 return "No files in workspace"
-            data = [f for f in all_files if f.file_type != "view"]
-            views = [f for f in all_files if f.file_type == "view"]
+            data_files = [f for f in all_files if not f.is_instance and f.file_type != "view"]
+            instances = [f for f in all_files if f.is_instance]
+
+            instance_map: dict[uuid.UUID, list] = {}
+            for inst in instances:
+                if inst.source_file_id:
+                    instance_map.setdefault(inst.source_file_id, []).append(inst)
+
             parts = []
-            if data:
-                parts.append("My Files/\n" + "\n".join(
-                    f"  - {f.name} (ID: {f.id}, type: {f.file_type}, size: {f.size_bytes}b)"
-                    for f in data
-                ))
-            if views:
-                parts.append("My Files/Views/\n" + "\n".join(
-                    f"  - {f.name} (ID: {f.id}, size: {f.size_bytes}b)"
-                    for f in views
-                ))
-            return "\n\n".join(parts)
+            for f in data_files:
+                parts.append(f"  - {f.name} (ID: {f.id}, type: {f.file_type}, size: {f.size_bytes}b)")
+                for inst in instance_map.get(f.id, []):
+                    parts.append(f"      ↳ {inst.name} (ID: {inst.id}, instance)")
+            return "My Files/\n" + "\n".join(parts)
 
         elif tool_name == "edit_file":
             file = await file_service.get_file_by_id(
@@ -337,13 +357,94 @@ class PlainerAgent:
             )
             return f"File '{file.name}' deleted"
 
-        elif tool_name == "link_view":
-            file_view = await file_service.link_view_to_file(
-                self.db,
-                file_id=uuid.UUID(tool_input["file_id"]),
-                view_file_id=uuid.UUID(tool_input["view_file_id"]),
-                label=tool_input["label"],
+        elif tool_name == "create_instance":
+            source = await file_service.get_file_by_id(
+                self.db, uuid.UUID(tool_input["source_file_id"])
             )
+            if source is None:
+                return "Error: Source file not found"
+            app_type = await file_service.get_app_type_by_slug(
+                self.db, tool_input["app_type_slug"], self.workspace_id
+            )
+            if app_type is None:
+                return f"Error: App type '{tool_input['app_type_slug']}' not found"
+
+            instance = await file_service.create_instance(
+                db=self.db,
+                storage=self.storage,
+                source_file=source,
+                app_type=app_type,
+                name=tool_input.get("name"),
+                config=tool_input.get("config"),
+                content=tool_input.get("content"),
+            )
+            await self.db.commit()
+
+            await self.ws_manager.send_to_workspace(
+                self.workspace_id,
+                {
+                    "type": "file.created",
+                    "payload": {
+                        "file_id": str(instance.id),
+                        "workspace_id": str(instance.workspace_id),
+                        "folder_id": str(instance.folder_id) if instance.folder_id else None,
+                        "name": instance.name,
+                        "is_instance": True,
+                        "source_file_id": str(source.id),
+                        "created_by_agent": True,
+                    },
+                },
+            )
+            return f"Instance '{instance.name}' created (ID: {instance.id}, app: {app_type.slug})"
+
+        elif tool_name == "create_app_type":
+            app_type = await file_service.create_app_type(
+                db=self.db,
+                workspace_id=self.workspace_id,
+                slug=tool_input["slug"],
+                label=tool_input["label"],
+                icon=tool_input.get("icon", "layout-dashboard"),
+                renderer="html-template",
+                template_content=tool_input.get("template_content"),
+                description=tool_input.get("description"),
+                created_by_agent=True,
+            )
+            await self.db.commit()
+
+            await self.ws_manager.send_to_workspace(
+                self.workspace_id,
+                {
+                    "type": "app_type.created",
+                    "payload": {
+                        "id": str(app_type.id),
+                        "slug": app_type.slug,
+                        "label": app_type.label,
+                    },
+                },
+            )
+            return f"App type '{app_type.label}' created (slug: {app_type.slug}, ID: {app_type.id})"
+
+        elif tool_name == "update_instance":
+            instance = await file_service.get_file_by_id(
+                self.db, uuid.UUID(tool_input["instance_id"])
+            )
+            if instance is None:
+                return "Error: Instance not found"
+            if not instance.is_instance:
+                return "Error: File is not an instance"
+
+            if "config" in tool_input:
+                instance.instance_config = tool_input["config"]
+            if "content" in tool_input:
+                new_content = tool_input["content"]
+                content_bytes = new_content.encode("utf-8")
+                new_key = f"{self.workspace_id}/{uuid.uuid4()}/{instance.name}"
+                await self.storage.put(new_key, content_bytes)
+                instance.content_text = new_content
+                instance.storage_key = new_key
+                instance.size_bytes = len(content_bytes)
+
+            instance.updated_at = datetime.now(timezone.utc)
             await self.db.commit()
 
             await self.ws_manager.send_to_workspace(
@@ -351,12 +452,55 @@ class PlainerAgent:
                 {
                     "type": "file.updated",
                     "payload": {
-                        "file_id": tool_input["file_id"],
-                        "linked_view": True,
+                        "file_id": str(instance.id),
+                        "name": instance.name,
+                        "is_instance": True,
                     },
                 },
             )
-            return f"View linked as '{tool_input['label']}' tab (link ID: {file_view.id})"
+            return f"Instance '{instance.name}' updated"
+
+        elif tool_name == "promote_instance_to_app":
+            instance = await file_service.get_file_by_id(
+                self.db, uuid.UUID(tool_input["instance_id"])
+            )
+            if instance is None:
+                return "Error: Instance not found"
+            if not instance.is_instance:
+                return "Error: File is not an instance"
+
+            # Use instance content or config as the template
+            template = instance.content_text or instance.instance_config or "{}"
+
+            app_type = await file_service.create_app_type(
+                db=self.db,
+                workspace_id=self.workspace_id,
+                slug=tool_input["slug"],
+                label=tool_input["label"],
+                icon=tool_input.get("icon", "layout-dashboard"),
+                renderer="html-template",
+                template_content=template,
+                description=tool_input.get("description"),
+                created_by_agent=True,
+            )
+            await self.db.commit()
+
+            await self.ws_manager.send_to_workspace(
+                self.workspace_id,
+                {
+                    "type": "app_type.created",
+                    "payload": {
+                        "id": str(app_type.id),
+                        "slug": app_type.slug,
+                        "label": app_type.label,
+                        "promoted_from": str(instance.id),
+                    },
+                },
+            )
+            return (
+                f"Instance '{instance.name}' promoted to app type '{app_type.label}' "
+                f"(slug: {app_type.slug}, ID: {app_type.id})"
+            )
 
         elif tool_name == "toggle_favorite":
             file = await file_service.toggle_file_favorite(

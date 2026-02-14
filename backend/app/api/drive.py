@@ -8,16 +8,17 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.file import (
-    AllViewsResponse,
+    AppTypeCreate,
+    AppTypeResponse,
     DriveResponse,
     FileContentResponse,
     FileContentUpdate,
     FileCreate,
     FileResponse,
-    FileViewCreate,
-    FileViewResponse,
     FolderCreate,
     FolderResponse,
+    InstanceConfigUpdate,
+    InstanceCreate,
     ShareRequest,
     ShareResponse,
 )
@@ -33,6 +34,33 @@ def get_storage() -> LocalStorageBackend:
     return LocalStorageBackend(settings.storage_local_path)
 
 
+def _file_response(file) -> FileResponse:
+    """Build a FileResponse with denormalized app_type_slug."""
+    slug = None
+    if file.is_instance and file.app_type:
+        slug = file.app_type.slug
+    return FileResponse(
+        id=file.id,
+        owner_id=file.owner_id,
+        workspace_id=file.workspace_id,
+        folder_id=file.folder_id,
+        name=file.name,
+        mime_type=file.mime_type,
+        size_bytes=file.size_bytes,
+        file_type=file.file_type,
+        is_vibe_file=file.is_vibe_file,
+        is_favorite=file.is_favorite,
+        created_by_agent=file.created_by_agent,
+        is_instance=file.is_instance,
+        app_type_id=file.app_type_id,
+        app_type_slug=slug,
+        source_file_id=file.source_file_id,
+        instance_config=file.instance_config,
+        created_at=file.created_at,
+        updated_at=file.updated_at,
+    )
+
+
 @router.get("", response_model=DriveResponse)
 async def get_my_drive(
     user: User = Depends(get_current_user),
@@ -40,13 +68,12 @@ async def get_my_drive(
 ):
     """Get the current user's personal drive."""
     drive = await file_service.get_user_drive(db, user.id)
-    views_folder, files_folder = await file_service.ensure_system_folders(db, drive.id, user.id)
+    files_folder = await file_service.ensure_system_folders(db, drive.id, user.id)
     await db.commit()
     return DriveResponse(
         id=drive.id,
         name=drive.name,
         owner_id=drive.owner_id,
-        views_folder_id=views_folder.id,
         files_folder_id=files_folder.id,
     )
 
@@ -72,14 +99,11 @@ async def create_file(
     drive = await file_service.get_user_drive(db, user.id)
     storage = get_storage()
 
-    # Default folder: Views folder for .html files, Files folder for data files
+    # Default folder: Files root folder
     folder_id = data.folder_id
     if folder_id is None:
-        views_folder, files_folder = await file_service.ensure_system_folders(
-            db, drive.id, user.id
-        )
-        is_view = data.name.lower().endswith((".html", ".htm"))
-        folder_id = views_folder.id if is_view else files_folder.id
+        files_folder = await file_service.ensure_system_folders(db, drive.id, user.id)
+        folder_id = files_folder.id
 
     file = await file_service.create_file_from_content(
         db=db,
@@ -91,8 +115,12 @@ async def create_file(
         folder_id=folder_id,
         created_by_id=user.id,
     )
+
+    # Auto-create instances (default viewer + text editor)
+    await file_service.auto_create_instances_for_file(db, storage, file)
+
     await db.commit()
-    return file
+    return _file_response(file)
 
 
 @router.get("/files/{file_id}", response_model=FileResponse)
@@ -122,7 +150,13 @@ async def get_file_content(
     if content is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Content not found")
 
-    return FileContentResponse(id=file.id, name=file.name, content=content, mime_type=file.mime_type, is_favorite=file.is_favorite)
+    slug = file.app_type.slug if file.is_instance and file.app_type else None
+    return FileContentResponse(
+        id=file.id, name=file.name, content=content, mime_type=file.mime_type,
+        is_favorite=file.is_favorite, is_instance=file.is_instance,
+        app_type_slug=slug, source_file_id=file.source_file_id,
+        instance_config=file.instance_config,
+    )
 
 
 @router.put("/files/{file_id}/content", response_model=FileContentResponse)
@@ -166,11 +200,8 @@ async def upload_file(
     if folder_id:
         fid = uuid.UUID(folder_id)
     else:
-        views_folder, files_folder = await file_service.ensure_system_folders(
-            db, drive.id, user.id
-        )
-        is_view = name.lower().endswith((".html", ".htm"))
-        fid = views_folder.id if is_view else files_folder.id
+        files_folder = await file_service.ensure_system_folders(db, drive.id, user.id)
+        fid = files_folder.id
 
     new_file = await file_service.create_file_from_binary(
         db=db,
@@ -182,8 +213,12 @@ async def upload_file(
         folder_id=fid,
         created_by_id=user.id,
     )
+
+    # Auto-create instances (default viewer + text editor)
+    await file_service.auto_create_instances_for_file(db, storage, new_file)
+
     await db.commit()
-    return new_file
+    return _file_response(new_file)
 
 
 # ── Folders ─────────────────────────────────────────────
@@ -264,89 +299,114 @@ async def list_favorite_folders(
     return await file_service.list_favorite_folders(db, drive.id)
 
 
-@router.get("/views", response_model=list[FileResponse])
-async def list_view_files(
+# ── App Types ──────────────────────────────────────────
+
+@router.get("/app-types", response_model=list[AppTypeResponse])
+async def list_app_types(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """List all available app types (global + workspace-specific)."""
     drive = await file_service.get_user_drive(db, user.id)
-    return await file_service.list_view_files(db, drive.id)
+    return await file_service.list_app_types(db, drive.id)
 
 
-@router.get("/all-views", response_model=AllViewsResponse)
-async def list_all_views(
+@router.post("/app-types", response_model=AppTypeResponse, status_code=status.HTTP_201_CREATED)
+async def create_app_type(
+    data: AppTypeCreate,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get all views for the sidebar: HTML views + built-in view candidates."""
+    """Create a custom app type."""
     drive = await file_service.get_user_drive(db, user.id)
-    return await file_service.list_all_views(db, drive.id)
+    app_type = await file_service.create_app_type(
+        db=db,
+        workspace_id=drive.id,
+        slug=data.slug,
+        label=data.label,
+        icon=data.icon,
+        renderer=data.renderer,
+        template_content=data.template_content,
+        description=data.description,
+        created_by_agent=False,
+    )
+    await db.commit()
+    return app_type
 
 
-@router.get("/files/{file_id}/views", response_model=list[FileViewResponse])
-async def get_file_views(
+# ── Instances ──────────────────────────────────────────
+
+@router.get("/files/{file_id}/instances", response_model=list[FileResponse])
+async def get_file_instances(
     file_id: uuid.UUID,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get linked HTML views for a specific data file."""
+    """Get all instances linked to a data file."""
     file = await file_service.get_file_by_id(db, file_id)
     if file is None or file.owner_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
-    views = await file_service.get_linked_views_for_file(db, file_id)
-    result = []
-    for v in views:
-        view_file = await file_service.get_file_by_id(db, v.view_file_id)
-        result.append(FileViewResponse(
-            id=v.id,
-            file_id=v.file_id,
-            view_file_id=v.view_file_id,
-            label=v.label,
-            position=v.position,
-            view_file_name=view_file.name if view_file else None,
-        ))
-    return result
+    instances = await file_service.get_instances_for_file(db, file_id)
+    return [_file_response(i) for i in instances]
 
 
-@router.post("/file-views", response_model=FileViewResponse, status_code=status.HTTP_201_CREATED)
-async def link_view(
-    data: FileViewCreate,
+@router.post("/instances", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
+async def create_instance(
+    data: InstanceCreate,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Link an HTML view file to a data file."""
-    file = await file_service.get_file_by_id(db, data.file_id)
-    view_file = await file_service.get_file_by_id(db, data.view_file_id)
-    if not file or file.owner_id != user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Data file not found")
-    if not view_file or view_file.owner_id != user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="View file not found")
-    if view_file.file_type != "view":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Target must be an HTML view file")
+    """Create an instance for a data file."""
+    drive = await file_service.get_user_drive(db, user.id)
+    storage = get_storage()
 
-    link = await file_service.link_view_to_file(
-        db, data.file_id, data.view_file_id, data.label, data.position
+    # Resolve app type
+    app_type = None
+    if data.app_type_id:
+        from app.models.app_type import AppType
+        result = await db.execute(select(AppType).where(AppType.id == data.app_type_id))
+        app_type = result.scalar_one_or_none()
+    elif data.app_type_slug:
+        app_type = await file_service.get_app_type_by_slug(db, data.app_type_slug, drive.id)
+
+    if app_type is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="App type not found")
+
+    source_file = None
+    if data.source_file_id:
+        source_file = await file_service.get_file_by_id(db, data.source_file_id)
+        if source_file is None or source_file.owner_id != user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source file not found")
+
+    if source_file is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="source_file_id is required")
+
+    instance = await file_service.create_instance(
+        db=db, storage=storage, source_file=source_file, app_type=app_type,
+        name=data.name, config=data.config, content=data.content,
     )
     await db.commit()
-    return FileViewResponse(
-        id=link.id,
-        file_id=link.file_id,
-        view_file_id=link.view_file_id,
-        label=link.label,
-        position=link.position,
-        view_file_name=view_file.name,
-    )
+    return _file_response(instance)
 
 
-@router.delete("/file-views/{file_view_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def unlink_view(
-    file_view_id: uuid.UUID,
+@router.put("/instances/{instance_id}/config", response_model=FileResponse)
+async def update_instance_config(
+    instance_id: uuid.UUID,
+    data: InstanceConfigUpdate,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Remove a view link."""
-    await file_service.unlink_view_from_file(db, file_view_id)
+    """Update an instance's config JSON."""
+    file = await file_service.get_file_by_id(db, instance_id)
+    if file is None or file.owner_id != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instance not found")
+    if not file.is_instance:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File is not an instance")
+
+    file.instance_config = data.config
+    await db.flush()
     await db.commit()
+    return _file_response(file)
 
 
 # ── Sharing ─────────────────────────────────────────────

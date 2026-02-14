@@ -308,13 +308,11 @@ function CollapsibleSection({
 }
 
 function AddDropdown({
-  onNew,
   onUpload,
   onTemplates,
   fileInputRef,
   onUploadChange,
 }: {
-  onNew: () => void;
   onUpload: () => void;
   onTemplates?: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -344,13 +342,6 @@ function AddDropdown({
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
-          <button
-            type="button"
-            onClick={() => { onNew(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
-          >
-            <Plus size={12} className="text-gray-400" /> New file
-          </button>
           <button
             type="button"
             onClick={() => { onUpload(); setOpen(false); }}
@@ -586,8 +577,6 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
   // Filter out instance files — they show nested under their source file
   const visibleFiles = filesFiles?.filter((f) => !f.is_instance) || [];
 
-  const isRootActive = currentFolderId === filesFolderId;
-
   async function handleNewFile() {
     if (!filesFolderId) return;
     try {
@@ -614,15 +603,21 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
       <div className="flex items-center">
         <button
           type="button"
-          onClick={() => setOpen(!open)}
+          onClick={() => {
+            if (!open) {
+              setOpen(true);
+              if (filesFolderId) navigateToRoot(filesFolderId);
+            } else {
+              setOpen(false);
+            }
+          }}
           className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
         >
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           <Lock size={10} />
-          <span>Private</span>
+          <span>Private Files</span>
         </button>
         <AddDropdown
-          onNew={handleNewFile}
           onUpload={() => fileInputRef.current?.click()}
           onTemplates={onAddTemplate}
           fileInputRef={fileInputRef}
@@ -632,33 +627,22 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
       {open && (
         <div className="ml-2 pl-1">
-          {/* Root folder button */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => filesFolderId && navigateToRoot(filesFolderId)}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && filesFolderId) navigateToRoot(filesFolderId);
-            }}
-            className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
-              isRootActive
-                ? 'bg-indigo-50 text-indigo-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-            style={{ paddingLeft: '8px' }}
-          >
-            <FolderIcon size={14} className="text-amber-500 shrink-0" />
-            <span className="truncate">My Files</span>
-          </div>
-
           <div className="space-y-0.5">
             {filesFolders?.map((folder) => (
-              <FolderNode key={folder.id} folder={folder} depth={1} />
+              <FolderNode key={folder.id} folder={folder} depth={0} />
             ))}
             {visibleFiles.map((file) => (
-              <FileNode key={file.id} file={file} depth={1} />
+              <FileNode key={file.id} file={file} depth={0} />
             ))}
           </div>
+          <button
+            type="button"
+            onClick={handleNewFile}
+            className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+          >
+            <Plus size={11} />
+            <span>New</span>
+          </button>
         </div>
       )}
     </div>
@@ -717,7 +701,7 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
         >
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           <Globe size={10} />
-          <span>Shared</span>
+          <span>Shared Files</span>
           {visibleFiles.length > 0 && (
             <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal normal-case">
               {visibleFiles.length}
@@ -725,7 +709,6 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
           )}
         </button>
         <AddDropdown
-          onNew={handleNewFile}
           onUpload={() => fileInputRef.current?.click()}
           onTemplates={onAddTemplate}
           fileInputRef={fileInputRef}
@@ -734,16 +717,26 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
       </div>
 
       {open && (
-        <div className="ml-2 pl-1 space-y-0.5">
-          {visibleFiles.length > 0 ? (
-            visibleFiles.map((file) => (
-              <FileNode key={file.id} file={file} depth={0} />
-            ))
-          ) : (
-            <p className="px-3 py-2 text-xs text-gray-400 italic">
-              No shared files yet
-            </p>
-          )}
+        <div className="ml-2 pl-1">
+          <div className="space-y-0.5">
+            {visibleFiles.length > 0 ? (
+              visibleFiles.map((file) => (
+                <FileNode key={file.id} file={file} depth={0} />
+              ))
+            ) : (
+              <p className="px-3 py-2 text-xs text-gray-400 italic">
+                No shared files yet
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleNewFile}
+            className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+          >
+            <Plus size={11} />
+            <span>New</span>
+          </button>
         </div>
       )}
     </div>

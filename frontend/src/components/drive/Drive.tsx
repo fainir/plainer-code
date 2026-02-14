@@ -2,6 +2,7 @@ import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance } from '../../api/drive';
 import DocxViewer from './DocxViewer';
+import MarkdownEditor from './MarkdownEditor';
 import { useDriveStore } from '../../stores/driveStore';
 import { useChatStore } from '../../stores/chatStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -383,7 +384,7 @@ function InstanceRenderer({
       if (ext === 'doc' || ext === 'docx') {
         return <DocxViewer fileId={fileId} content={sourceContent} fileName={fileName} />;
       }
-      return <MarkdownViewer content={sourceContent} />;
+      return <MarkdownEditor fileId={fileId} content={sourceContent} fileName={fileName} />;
     }
     case 'text-editor':
       return <RawViewer content={sourceContent} isCode={isCode} />;
@@ -688,7 +689,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
       return <TableViewer content={fileData.content} />;
     }
     if (viewMode === 'document') {
-      return <MarkdownViewer content={fileData.content} />;
+      return <MarkdownEditor fileId={fileId} content={fileData.content} fileName={actualName} />;
     }
     if (viewMode === 'kanban') {
       return <KanbanViewer content={fileData.content} />;
@@ -749,21 +750,19 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
         </button>
       </div>
 
-      {/* Instance tab bar — shows sibling instances */}
-      {siblingInstances && siblingInstances.length > 0 && (
-        <div className="relative flex items-center border-b border-gray-200 bg-gray-50 shrink-0">
-          <InstanceTabBar
-            instances={siblingInstances}
-            activeInstanceId={isInstance ? fileId : null}
-            onSelectInstance={handleSelectInstance}
-            onCreateCustom={handleCreateCustom}
-            onAddView={(slug) => addViewMutation.mutate(slug)}
-            existingSlugs={(siblingInstances || []).map((i) => i.app_type_slug).filter(Boolean) as string[]}
-            fileType={detectedType}
-            isAddingView={addViewMutation.isPending}
-          />
-        </div>
-      )}
+      {/* Instance tab bar — always visible */}
+      <div className="relative flex items-center border-b border-gray-200 bg-gray-50 shrink-0">
+        <InstanceTabBar
+          instances={siblingInstances || []}
+          activeInstanceId={isInstance ? fileId : null}
+          onSelectInstance={handleSelectInstance}
+          onCreateCustom={handleCreateCustom}
+          onAddView={(slug) => addViewMutation.mutate(slug)}
+          existingSlugs={(siblingInstances || []).map((i) => i.app_type_slug).filter(Boolean) as string[]}
+          fileType={detectedType}
+          isAddingView={addViewMutation.isPending}
+        />
+      </div>
 
       {/* Custom view with AI dialog */}
       {showCustomViewDialog && (

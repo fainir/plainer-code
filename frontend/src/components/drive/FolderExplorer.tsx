@@ -469,6 +469,7 @@ function FavoritesSection() {
 function PrivateSection() {
   const { view, navigateToRoot, currentFolderId } = useDriveStore();
   const isActive = view === 'private';
+  const [open, setOpen] = useState(true);
 
   // Fetch drive to get system folder IDs
   const { data: drive } = useQuery({
@@ -505,45 +506,54 @@ function PrivateSection() {
 
   return (
     <div>
-      <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-        <Lock size={12} />
-        Private
-      </div>
-
-      {/* Root folder button */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => filesFolderId && navigateToRoot(filesFolderId)}
-        onKeyDown={(e) => {
-          if ((e.key === 'Enter' || e.key === ' ') && filesFolderId) navigateToRoot(filesFolderId);
-        }}
-        className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
-          isRootActive
-            ? 'bg-indigo-50 text-indigo-700 font-medium'
-            : 'text-gray-700 hover:bg-gray-100'
-        }`}
-        style={{ paddingLeft: '8px' }}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex-1 w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
       >
-        <FolderIcon size={14} className="text-amber-500 shrink-0" />
-        <span className="truncate">My Files</span>
-      </div>
+        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+        <Lock size={10} />
+        <span>Private</span>
+      </button>
 
-      <div className="space-y-0.5">
-        {/* Folders first */}
-        {filesFolders?.map((folder) => (
-          <FolderNode key={folder.id} folder={folder} depth={1} />
-        ))}
-        {/* Then files */}
-        {visibleFiles.map((file) => (
-          <FileNode key={file.id} file={file} depth={1} />
-        ))}
-      </div>
+      {open && (
+        <div className="ml-2 pl-1">
+          {/* Root folder button */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => filesFolderId && navigateToRoot(filesFolderId)}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && filesFolderId) navigateToRoot(filesFolderId);
+            }}
+            className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
+              isRootActive
+                ? 'bg-indigo-50 text-indigo-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            style={{ paddingLeft: '8px' }}
+          >
+            <FolderIcon size={14} className="text-amber-500 shrink-0" />
+            <span className="truncate">My Files</span>
+          </div>
+
+          <div className="space-y-0.5">
+            {filesFolders?.map((folder) => (
+              <FolderNode key={folder.id} folder={folder} depth={1} />
+            ))}
+            {visibleFiles.map((file) => (
+              <FileNode key={file.id} file={file} depth={1} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function SharedSection() {
+  const [open, setOpen] = useState(false);
+
   const { data: sharedFiles } = useQuery({
     queryKey: ['shared-files'],
     queryFn: () => listSharedWithMe(),
@@ -554,22 +564,34 @@ function SharedSection() {
 
   return (
     <div>
-      <div className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-        <Globe size={12} />
-        Shared
-      </div>
-
-      <div className="space-y-0.5">
-        {visibleFiles.length > 0 ? (
-          visibleFiles.map((file) => (
-            <FileNode key={file.id} file={file} depth={0} />
-          ))
-        ) : (
-          <p className="px-3 py-2 text-xs text-gray-400 italic">
-            No shared files yet
-          </p>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex-1 w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+      >
+        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+        <Globe size={10} />
+        <span>Shared</span>
+        {visibleFiles.length > 0 && (
+          <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal normal-case">
+            {visibleFiles.length}
+          </span>
         )}
-      </div>
+      </button>
+
+      {open && (
+        <div className="ml-2 pl-1 space-y-0.5">
+          {visibleFiles.length > 0 ? (
+            visibleFiles.map((file) => (
+              <FileNode key={file.id} file={file} depth={0} />
+            ))
+          ) : (
+            <p className="px-3 py-2 text-xs text-gray-400 italic">
+              No shared files yet
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -588,8 +610,8 @@ export default function FolderExplorer() {
       {/* Navigation sections */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-2 space-y-0.5">
-          <AppsSection />
           <FavoritesSection />
+          <AppsSection />
           <PrivateSection />
           <SharedSection />
         </div>

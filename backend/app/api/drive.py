@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +11,7 @@ from app.schemas.file import (
     AllViewsResponse,
     DriveResponse,
     FileContentResponse,
+    FileContentUpdate,
     FileCreate,
     FileResponse,
     FileViewCreate,
@@ -122,6 +123,67 @@ async def get_file_content(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Content not found")
 
     return FileContentResponse(id=file.id, name=file.name, content=content, mime_type=file.mime_type, is_favorite=file.is_favorite)
+
+
+@router.put("/files/{file_id}/content", response_model=FileContentResponse)
+async def update_file_content(
+    file_id: uuid.UUID,
+    data: FileContentUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Save updated content (e.g. from the WYSIWYG editor)."""
+    file = await file_service.get_file_by_id(db, file_id)
+    if file is None or file.owner_id != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+
+    storage = get_storage()
+    file = await file_service.update_file_content(
+        db, storage, file, data.content, updated_by_id=user.id
+    )
+    await db.commit()
+    return FileContentResponse(
+        id=file.id, name=file.name, content=file.content_text or "",
+        mime_type=file.mime_type, is_favorite=file.is_favorite,
+    )
+
+
+@router.post("/files/upload", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
+async def upload_file(
+    file: UploadFile,
+    folder_id: str | None = Form(default=None),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Upload a binary file (e.g. .docx)."""
+    drive = await file_service.get_user_drive(db, user.id)
+    storage = get_storage()
+
+    data = await file.read()
+    name = file.filename or "untitled"
+
+    fid = None
+    if folder_id:
+        fid = uuid.UUID(folder_id)
+    else:
+        views_folder, files_folder = await file_service.ensure_system_folders(
+            db, drive.id, user.id
+        )
+        is_view = name.lower().endswith((".html", ".htm"))
+        fid = views_folder.id if is_view else files_folder.id
+
+    new_file = await file_service.create_file_from_binary(
+        db=db,
+        storage=storage,
+        workspace_id=drive.id,
+        name=name,
+        data=data,
+        owner_id=user.id,
+        folder_id=fid,
+        created_by_id=user.id,
+    )
+    await db.commit()
+    return new_file
 
 
 # ── Folders ─────────────────────────────────────────────

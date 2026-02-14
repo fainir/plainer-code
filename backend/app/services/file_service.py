@@ -1,8 +1,10 @@
+import io
 import mimetypes
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select, or_
+import mammoth
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.file import File, FileVersion
@@ -47,6 +49,16 @@ def detect_file_type(mime_type: str, filename: str) -> str:
 def detect_mime_type(filename: str) -> str:
     mime, _ = mimetypes.guess_type(filename)
     return mime or "application/octet-stream"
+
+
+def is_docx_file(filename: str) -> bool:
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    return ext in ("doc", "docx")
+
+
+def convert_docx_to_html(docx_bytes: bytes) -> str:
+    result = mammoth.convert_to_html(io.BytesIO(docx_bytes))
+    return result.value
 
 
 async def get_user_drive(db: AsyncSession, user_id: uuid.UUID) -> Workspace:
@@ -131,6 +143,62 @@ async def create_file_from_content(
         change_summary="Initial version",
         created_by_id=created_by_id,
         created_by_agent=created_by_agent,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(version)
+    await db.flush()
+
+    return file
+
+
+async def create_file_from_binary(
+    db: AsyncSession,
+    storage: StorageBackend,
+    workspace_id: uuid.UUID,
+    name: str,
+    data: bytes,
+    owner_id: uuid.UUID,
+    folder_id: uuid.UUID | None = None,
+    created_by_id: uuid.UUID | None = None,
+) -> File:
+    mime_type = detect_mime_type(name)
+    file_type = detect_file_type(mime_type, name)
+    size_bytes = len(data)
+
+    storage_key = f"{workspace_id}/{uuid.uuid4()}/{name}"
+    await storage.put(storage_key, data)
+
+    # For docx files, convert to HTML and store in content_text
+    content_text = None
+    if is_docx_file(name):
+        try:
+            content_text = convert_docx_to_html(data)
+        except Exception:
+            content_text = None
+
+    file = File(
+        owner_id=owner_id,
+        workspace_id=workspace_id,
+        folder_id=folder_id,
+        name=name,
+        mime_type=mime_type,
+        size_bytes=size_bytes,
+        storage_key=storage_key,
+        file_type=file_type,
+        content_text=content_text,
+        created_by_id=created_by_id,
+    )
+    db.add(file)
+    await db.flush()
+
+    version = FileVersion(
+        file_id=file.id,
+        version_number=1,
+        storage_key=storage_key,
+        size_bytes=size_bytes,
+        content_text=content_text,
+        change_summary="Initial version",
+        created_by_id=created_by_id,
         created_at=datetime.now(timezone.utc),
     )
     db.add(version)
@@ -289,6 +357,15 @@ async def get_file_content(
     data = await storage.get(file.storage_key)
     if data is None:
         return None
+    # For docx files, convert binary to HTML and cache
+    if is_docx_file(file.name):
+        try:
+            html = convert_docx_to_html(data)
+            file.content_text = html
+            await db.flush()
+            return html
+        except Exception:
+            return "<p>Unable to convert this document.</p>"
     return data.decode("utf-8")
 
 
@@ -553,6 +630,46 @@ async def share_file(
     db.add(share)
     await db.flush()
     return share
+
+
+async def update_file_content(
+    db: AsyncSession,
+    storage: StorageBackend,
+    file: File,
+    new_content: str,
+    updated_by_id: uuid.UUID | None = None,
+) -> File:
+    """Update a file's text content and create a new version."""
+    content_bytes = new_content.encode("utf-8")
+    storage_key = f"{file.workspace_id}/{uuid.uuid4()}/{file.name}"
+    await storage.put(storage_key, content_bytes)
+
+    # Get next version number
+    result = await db.execute(
+        select(func.coalesce(func.max(FileVersion.version_number), 0)).where(
+            FileVersion.file_id == file.id
+        )
+    )
+    max_version = result.scalar()
+
+    file.content_text = new_content
+    file.size_bytes = len(content_bytes)
+    file.storage_key = storage_key
+
+    version = FileVersion(
+        file_id=file.id,
+        version_number=max_version + 1,
+        storage_key=storage_key,
+        size_bytes=len(content_bytes),
+        content_text=new_content,
+        change_summary="Content updated",
+        created_by_id=updated_by_id,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(version)
+    await db.flush()
+
+    return file
 
 
 async def share_folder(

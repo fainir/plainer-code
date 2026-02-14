@@ -120,3 +120,18 @@ export async function listMessages(conversationId: string) {
   const res = await api.get(`/drive/conversations/${conversationId}/messages`);
   return res.data as Message[];
 }
+
+export async function uploadFile(file: File, folderId?: string) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (folderId) formData.append('folder_id', folderId);
+  const res = await api.post('/drive/files/upload', formData, {
+    headers: { 'Content-Type': undefined },
+  });
+  return res.data as FileItem;
+}
+
+export async function updateFileContent(fileId: string, content: string) {
+  const res = await api.put(`/drive/files/${fileId}/content`, { content });
+  return res.data as { id: string; name: string; content: string; mime_type: string; is_favorite: boolean };
+}

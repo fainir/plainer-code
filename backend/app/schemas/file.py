@@ -28,6 +28,10 @@ class FileResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class FileContentUpdate(BaseModel):
+    content: str
+
+
 class FileContentResponse(BaseModel):
     id: uuid.UUID
     name: str

@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 
 type DriveView = 'private' | 'shared';
-type FileViewMode = 'edit' | 'document' | 'table' | 'kanban' | 'calendar' | 'html-view';
+type FileViewMode = 'edit' | 'document' | 'table' | 'kanban' | 'calendar' | 'html-view' | 'docx';
 
 function getDefaultViewMode(fileName: string, fileType?: string): FileViewMode {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  if (ext === 'doc' || ext === 'docx') return 'docx';
   if (ext === 'csv' || ext === 'tsv' || fileType === 'spreadsheet') return 'table';
   if (ext === 'md' || ext === 'markdown') return 'document';
   if (ext === 'html' || ext === 'htm' || fileType === 'view') return 'html-view';

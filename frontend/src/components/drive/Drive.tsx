@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileLinkedViews, unlinkViewFromFile } from '../../api/drive';
+import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileLinkedViews, unlinkViewFromFile, uploadFile } from '../../api/drive';
+import DocxViewer from './DocxViewer';
 import { useDriveStore } from '../../stores/driveStore';
 import { useChatStore } from '../../stores/chatStore';
 import type { FileViewMode } from '../../stores/driveStore';
@@ -26,6 +27,7 @@ import {
   Calendar,
   Eye,
   Star,
+  Upload,
   X,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -377,6 +379,8 @@ interface ViewModeOption {
 /** The single default view for a file type (the one shown automatically). */
 function getDefaultViewModeOption(fileName: string, fileType: string): ViewModeOption {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  if (ext === 'doc' || ext === 'docx')
+    return { mode: 'docx', label: 'Document', icon: <FileType size={14} />, description: 'Word document' };
   if (ext === 'csv' || ext === 'tsv' || fileType === 'spreadsheet')
     return { mode: 'table', label: 'Table', icon: <Table size={14} />, description: 'Spreadsheet' };
   if (ext === 'md' || ext === 'markdown' || fileType === 'document')
@@ -784,6 +788,8 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
               Go back
             </button>
           </div>
+        ) : viewMode === 'docx' && fileData?.content ? (
+          <DocxViewer fileId={fileId} content={fileData.content} fileName={actualName} />
         ) : viewMode === 'html-view' && linkedViewFileId && linkedViewData?.content ? (
           <div className="h-full -m-5">
             <HtmlViewRenderer content={linkedViewData.content} />
@@ -843,6 +849,7 @@ export default function Drive() {
   const [newFileName, setNewFileName] = useState('');
   const [newFileContent, setNewFileContent] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isPrivate = view === 'private';
   const isShared = view === 'shared';
@@ -877,6 +884,19 @@ export default function Drive() {
       setNewFolderName('');
     },
   });
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => uploadFile(file, currentFolderId || undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drive-files'] });
+    },
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadMutation.mutate(file);
+    e.target.value = '';
+  };
 
   // File viewer mode
   if (selectedFileId) {
@@ -936,6 +956,22 @@ export default function Drive() {
                 <Plus size={14} />
                 New file
               </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition"
+              >
+                <Upload size={14} />
+                Upload
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept=".doc,.docx,.pdf,.csv,.xlsx,.xls,.md,.txt"
+                onChange={handleFileUpload}
+                aria-label="Upload file"
+              />
             </>
           )}
           <button

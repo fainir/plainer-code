@@ -17,3 +17,38 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* TipTap / ProseMirror editor styles */
+.ProseMirror {
+  outline: none;
+}
+.ProseMirror > * + * {
+  margin-top: 0.75em;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
+.ProseMirror h1 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+.ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+.ProseMirror h3 { font-size: 1.125rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+.ProseMirror h4 { font-size: 1rem; font-weight: 600; margin-top: 0.75rem; margin-bottom: 0.375rem; }
+.ProseMirror h5 { font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem; margin-bottom: 0.25rem; }
+.ProseMirror h6 { font-size: 0.75rem; font-weight: 600; margin-top: 0.5rem; margin-bottom: 0.25rem; }
+.ProseMirror p { margin-bottom: 0.75rem; line-height: 1.625; }
+.ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; }
+.ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; }
+.ProseMirror li { margin-bottom: 0.25rem; }
+.ProseMirror blockquote { border-left: 3px solid #c7d2fe; padding-left: 1rem; color: #6b7280; }
+.ProseMirror a { color: #4f46e5; text-decoration: underline; }
+.ProseMirror strong { font-weight: 700; }
+.ProseMirror em { font-style: italic; }
+.ProseMirror u { text-decoration: underline; }
+.ProseMirror s { text-decoration: line-through; }
+.ProseMirror mark { background-color: #fef08a; padding: 2px 0; }
+.ProseMirror code { background: #f3f4f6; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.875em; }
+.ProseMirror pre { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; font-family: ui-monospace, monospace; font-size: 0.875em; overflow-x: auto; }
+.ProseMirror hr { border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0; }

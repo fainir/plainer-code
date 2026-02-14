@@ -101,14 +101,26 @@ TOOLS = [
             "views that render the data file using a specific app (Table, Board, Calendar, "
             "Document, Text Editor, or a custom app). The instance appears nested under the "
             "data file in the sidebar and as a tab when viewing the file. Use this when the "
-            "user wants a new way to view their data, e.g. 'show this CSV as a board'."
+            "user wants a new way to view their data, e.g. 'show this CSV as a board'. "
+            "For multi-file views (e.g. dashboards), use source_file_ids to link the view "
+            "to all relevant files."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "source_file_id": {
                     "type": "string",
-                    "description": "The UUID of the data file to create an instance for",
+                    "description": "The UUID of the primary data file. Use this for single-file views.",
+                },
+                "source_file_ids": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "List of all source file UUIDs this view uses. The first is the primary "
+                        "source; the rest are related. The view will appear linked under ALL these "
+                        "files in the sidebar. Use this instead of source_file_id for multi-file "
+                        "views like dashboards."
+                    ),
                 },
                 "app_type_slug": {
                     "type": "string",
@@ -131,7 +143,7 @@ TOOLS = [
                     "description": "Optional HTML content for custom app type instances (html-template renderer)",
                 },
             },
-            "required": ["source_file_id", "app_type_slug"],
+            "required": ["app_type_slug"],
         },
     },
     {

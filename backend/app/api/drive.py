@@ -55,6 +55,7 @@ def _file_response(file) -> FileResponse:
         app_type_id=file.app_type_id,
         app_type_slug=slug,
         source_file_id=file.source_file_id,
+        related_source_ids=file.related_source_ids,
         instance_config=file.instance_config,
         created_at=file.created_at,
         updated_at=file.updated_at,
@@ -396,6 +397,7 @@ async def create_instance(
     instance = await file_service.create_instance(
         db=db, storage=storage, source_file=source_file, app_type=app_type,
         name=data.name, config=data.config, content=data.content,
+        related_source_ids=data.related_source_ids,
     )
     await db.commit()
     return _file_response(instance)

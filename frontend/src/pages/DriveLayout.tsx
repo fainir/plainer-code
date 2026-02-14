@@ -10,8 +10,11 @@ import Drive from '../components/drive/Drive';
 
 function ResizeHandle() {
   return (
-    <Separator className="group w-1 relative flex items-center justify-center hover:bg-indigo-100 active:bg-indigo-200 transition-colors">
-      <div className="w-px h-full bg-gray-200 group-hover:bg-indigo-400 group-active:bg-indigo-500 transition-colors" />
+    <Separator
+      style={{ width: 5, cursor: 'col-resize' }}
+      className="relative flex items-center justify-center bg-transparent hover:bg-indigo-50 active:bg-indigo-100 transition-colors"
+    >
+      <div className="w-px h-full bg-gray-200" />
     </Separator>
   );
 }
@@ -46,10 +49,10 @@ export default function DriveLayout() {
   }
 
   return (
-    <div className="h-screen bg-white">
-      <Group orientation="horizontal">
+    <div className="h-screen w-screen overflow-hidden bg-white">
+      <Group orientation="horizontal" style={{ height: '100%', width: '100%' }}>
         {/* Left: Folder Explorer */}
-        <Panel defaultSize={15} minSize={10} maxSize={30}>
+        <Panel defaultSize="220px" minSize="160px" maxSize="400px">
           <div className="h-full overflow-hidden">
             <FolderExplorer />
           </div>
@@ -58,7 +61,7 @@ export default function DriveLayout() {
         <ResizeHandle />
 
         {/* Center: Drive */}
-        <Panel minSize={30}>
+        <Panel minSize="300px">
           <div className="h-full overflow-hidden">
             <Drive />
           </div>
@@ -68,7 +71,7 @@ export default function DriveLayout() {
         {chatPanelOpen && (
           <>
             <ResizeHandle />
-            <Panel defaultSize={25} minSize={15} maxSize={45}>
+            <Panel defaultSize="360px" minSize="280px" maxSize="600px">
               <div className="h-full overflow-hidden">
                 <ChatPanel
                   send={send}

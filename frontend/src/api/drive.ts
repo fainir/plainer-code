@@ -117,6 +117,7 @@ export async function getFileInstances(fileId: string) {
 
 export async function createInstance(data: {
   source_file_id: string;
+  related_source_ids?: string[];
   app_type_slug?: string;
   app_type_id?: string;
   name?: string;

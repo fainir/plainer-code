@@ -378,9 +378,20 @@ class PlainerAgent:
             return f"File '{file.name}' deleted"
 
         elif tool_name == "create_instance":
-            source = await file_service.get_file_by_id(
-                self.db, uuid.UUID(tool_input["source_file_id"])
-            )
+            # Support both source_file_id (single) and source_file_ids (multi-file)
+            source_file_ids_raw = tool_input.get("source_file_ids")
+            related_source_ids: list[uuid.UUID] | None = None
+
+            if source_file_ids_raw and len(source_file_ids_raw) > 0:
+                primary_id = uuid.UUID(source_file_ids_raw[0])
+                if len(source_file_ids_raw) > 1:
+                    related_source_ids = [uuid.UUID(fid) for fid in source_file_ids_raw[1:]]
+            elif tool_input.get("source_file_id"):
+                primary_id = uuid.UUID(tool_input["source_file_id"])
+            else:
+                return "Error: Either source_file_id or source_file_ids is required"
+
+            source = await file_service.get_file_by_id(self.db, primary_id)
             if source is None:
                 return "Error: Source file not found"
             app_type = await file_service.get_app_type_by_slug(
@@ -397,6 +408,7 @@ class PlainerAgent:
                 name=tool_input.get("name"),
                 config=tool_input.get("config"),
                 content=tool_input.get("content"),
+                related_source_ids=related_source_ids,
             )
             await self.db.commit()
 

@@ -26,6 +26,7 @@ class FileResponse(BaseModel):
     app_type_id: uuid.UUID | None = None
     app_type_slug: str | None = None
     source_file_id: uuid.UUID | None = None
+    related_source_ids: list[uuid.UUID] | None = None
     instance_config: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -115,6 +116,7 @@ class AppTypeCreate(BaseModel):
 
 class InstanceCreate(BaseModel):
     source_file_id: uuid.UUID | None = None
+    related_source_ids: list[uuid.UUID] | None = None
     app_type_id: uuid.UUID | None = None
     app_type_slug: str | None = None
     name: str | None = None

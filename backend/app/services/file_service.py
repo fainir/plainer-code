@@ -257,12 +257,15 @@ async def create_app_type(
 async def get_instances_for_file(
     db: AsyncSession, file_id: uuid.UUID
 ) -> list[File]:
-    """Get all instances linked to a data file."""
+    """Get all instances linked to a data file (primary or related)."""
     result = await db.execute(
         select(File)
         .options(selectinload(File.app_type))
         .where(
-            File.source_file_id == file_id,
+            or_(
+                File.source_file_id == file_id,
+                File.related_source_ids.any(file_id),
+            ),
             File.is_instance.is_(True),
             File.deleted_at.is_(None),
         )
@@ -279,6 +282,7 @@ async def create_instance(
     name: str | None = None,
     config: str | None = None,
     content: str | None = None,
+    related_source_ids: list[uuid.UUID] | None = None,
 ) -> File:
     """Create an instance file for a data file using an app type."""
     base = source_file.name.rsplit(".", 1)[0] if "." in source_file.name else source_file.name
@@ -311,6 +315,7 @@ async def create_instance(
         is_instance=True,
         app_type_id=app_type.id,
         source_file_id=source_file.id,
+        related_source_ids=related_source_ids,
         instance_config=instance_config,
         is_vibe_file=source_file.is_vibe_file,
         created_by_id=source_file.created_by_id,

@@ -32,6 +32,7 @@ export interface FileItem {
   app_type_id: string | null;
   app_type_slug: string | null;
   source_file_id: string | null;
+  related_source_ids: string[] | null;
   instance_config: string | null;
   created_at: string;
   updated_at: string;

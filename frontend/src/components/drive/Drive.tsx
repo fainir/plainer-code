@@ -822,7 +822,6 @@ export default function Drive() {
   const visibleFiles = files?.filter((f) => !f.is_instance) || [];
 
   const isLoading = filesLoading || foldersLoading;
-  const title = isShared ? 'Shared' : 'Private';
 
   return (
     <div className="h-full flex flex-col bg-gray-950">

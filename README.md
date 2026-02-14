@@ -137,7 +137,7 @@ The app is deployed on [Railway](https://railway.app) as separate services in a 
 | Service | Type | Description |
 |---|---|---|
 | **backend-v2** | Docker (from `backend/Dockerfile`) | FastAPI API + WebSocket server |
-| **frontend-v2** | Railpack (auto-detected Node.js) | Static SPA served by Caddy |
+| **web** | Railpack (auto-detected Node.js) | Static SPA served by Caddy |
 | **Postgres** | Railway managed | PostgreSQL database |
 | **Redis** | Railway managed | Redis cache |
 
@@ -174,13 +174,13 @@ railway up --service backend-v2 --ci
 
 ```bash
 cd frontend
-railway up --service frontend-v2 --ci
+railway up --service web --ci
 ```
 
 **Deploy both at once (from project root):**
 
 ```bash
-cd backend && railway up --service backend-v2 --detach && cd ../frontend && railway up --service frontend-v2 --detach
+cd backend && railway up --service backend-v2 --detach && cd ../frontend && railway up --service web --detach
 ```
 
 ### Required Environment Variables on Railway
@@ -198,7 +198,7 @@ cd backend && railway up --service backend-v2 --detach && cd ../frontend && rail
 | `S3_ACCESS_KEY_ID` | Your AWS access key |
 | `S3_SECRET_ACCESS_KEY` | Your AWS secret key |
 
-**frontend-v2:**
+**web:**
 
 | Variable | Value |
 |---|---|
@@ -208,7 +208,7 @@ cd backend && railway up --service backend-v2 --detach && cd ../frontend && rail
 
 ```bash
 railway variable set KEY=VALUE --service backend-v2
-railway variable set VITE_API_URL=https://backend-v2-production-96a1.up.railway.app --service frontend-v2
+railway variable set VITE_API_URL=https://backend-v2-production-96a1.up.railway.app --service web
 ```
 
 ### Checking Status
@@ -219,7 +219,7 @@ railway service status --all
 
 # Logs
 railway service logs --service backend-v2 --latest -n 50
-railway service logs --service frontend-v2 --latest -n 50
+railway service logs --service web --latest -n 50
 
 # Build logs
 railway service logs --service backend-v2 --build --latest -n 100

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getMyDrive,
   listFolders,
@@ -11,6 +11,8 @@ import {
   listAppTypes,
   listInstancesByAppType,
   getFileInstances,
+  createFile,
+  uploadFile,
 } from '../../api/drive';
 import { useDriveStore } from '../../stores/driveStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -36,6 +38,7 @@ import {
   Pencil,
   Eye,
   LayoutGrid,
+  Upload,
 } from 'lucide-react';
 import MarketplaceModal from '../marketplace/MarketplaceModal';
 
@@ -376,8 +379,6 @@ function AppsSection({ onAddApp }: { onAddApp?: () => void }) {
       label="Apps"
       icon={<LayoutGrid size={10} />}
       defaultOpen
-      onAction={onAddApp}
-      actionTitle="Add app"
     >
       {builtinApps.length > 0 ? (
         builtinApps.map((app) => (
@@ -387,6 +388,16 @@ function AppsSection({ onAddApp }: { onAddApp?: () => void }) {
         <p className="px-3 py-2 text-xs text-gray-400 italic">
           Loading apps...
         </p>
+      )}
+      {onAddApp && (
+        <button
+          type="button"
+          onClick={onAddApp}
+          className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+        >
+          <Plus size={11} />
+          <span>New App</span>
+        </button>
       )}
     </CollapsibleSection>
   );
@@ -471,9 +482,11 @@ function FavoritesSection() {
 }
 
 function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
-  const { view, navigateToRoot, currentFolderId } = useDriveStore();
+  const { view, navigateToRoot, currentFolderId, selectFile } = useDriveStore();
   const isActive = view === 'private';
   const [open, setOpen] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   // Fetch drive to get system folder IDs
   const { data: drive } = useQuery({
@@ -508,29 +521,38 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
   const isRootActive = currentFolderId === filesFolderId;
 
+  async function handleNewFile() {
+    if (!filesFolderId) return;
+    try {
+      const file = await createFile('Untitled.md', '', filesFolderId);
+      queryClient.invalidateQueries({ queryKey: ['drive-files'] });
+      selectFile(file.id, file.name, file.file_type);
+    } catch { /* ignore */ }
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || !filesFolderId) return;
+    for (const f of Array.from(files)) {
+      try {
+        await uploadFile(f, filesFolderId);
+      } catch { /* ignore */ }
+    }
+    queryClient.invalidateQueries({ queryKey: ['drive-files'] });
+    e.target.value = '';
+  }
+
   return (
     <div>
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
-        >
-          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-          <Lock size={10} />
-          <span>Private</span>
-        </button>
-        {onAddTemplate && (
-          <button
-            type="button"
-            onClick={onAddTemplate}
-            className="px-2 py-1 text-gray-400 hover:text-indigo-600 transition"
-            title="Add from templates"
-          >
-            <Plus size={12} />
-          </button>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+      >
+        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+        <Lock size={10} />
+        <span>Private</span>
+      </button>
 
       {open && (
         <div className="ml-2 pl-1">
@@ -561,22 +583,81 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
               <FileNode key={file.id} file={file} depth={1} />
             ))}
           </div>
+
+          {/* Add file actions */}
+          <div className="flex items-center gap-0.5 pt-1 px-1">
+            <button
+              type="button"
+              onClick={handleNewFile}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+            >
+              <Plus size={10} /> New
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+            >
+              <Upload size={10} /> Upload
+            </button>
+            {onAddTemplate && (
+              <button
+                type="button"
+                onClick={onAddTemplate}
+                className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+              >
+                <FileText size={10} /> Templates
+              </button>
+            )}
+          </div>
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} multiple title="Upload files" />
         </div>
       )}
     </div>
   );
 }
 
-function SharedSection() {
+function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
   const [open, setOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const { selectFile } = useDriveStore();
 
   const { data: sharedFiles } = useQuery({
     queryKey: ['shared-files'],
     queryFn: () => listSharedWithMe(),
   });
 
+  // Get files folder for new/upload actions
+  const { data: drive } = useQuery({
+    queryKey: ['my-drive'],
+    queryFn: () => getMyDrive(),
+  });
+  const filesFolderId = drive?.files_folder_id;
+
   // Filter out instance files
   const visibleFiles = sharedFiles?.filter((f) => !f.is_instance) || [];
+
+  async function handleNewFile() {
+    if (!filesFolderId) return;
+    try {
+      const file = await createFile('Untitled.md', '', filesFolderId);
+      queryClient.invalidateQueries({ queryKey: ['drive-files'] });
+      selectFile(file.id, file.name, file.file_type);
+    } catch { /* ignore */ }
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || !filesFolderId) return;
+    for (const f of Array.from(files)) {
+      try {
+        await uploadFile(f, filesFolderId);
+      } catch { /* ignore */ }
+    }
+    queryClient.invalidateQueries({ queryKey: ['drive-files'] });
+    e.target.value = '';
+  }
 
   return (
     <div>
@@ -606,6 +687,34 @@ function SharedSection() {
               No shared files yet
             </p>
           )}
+
+          {/* Add file actions */}
+          <div className="flex items-center gap-0.5 pt-1 px-1">
+            <button
+              type="button"
+              onClick={handleNewFile}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+            >
+              <Plus size={10} /> New
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+            >
+              <Upload size={10} /> Upload
+            </button>
+            {onAddTemplate && (
+              <button
+                type="button"
+                onClick={onAddTemplate}
+                className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+              >
+                <FileText size={10} /> Templates
+              </button>
+            )}
+          </div>
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} multiple title="Upload files" />
         </div>
       )}
     </div>
@@ -631,7 +740,7 @@ export default function FolderExplorer() {
           <FavoritesSection />
           <AppsSection onAddApp={() => setMarketplaceTab('app')} />
           <PrivateSection onAddTemplate={() => setMarketplaceTab('template')} />
-          <SharedSection />
+          <SharedSection onAddTemplate={() => setMarketplaceTab('template')} />
         </div>
       </div>
 

@@ -307,6 +307,73 @@ function CollapsibleSection({
   );
 }
 
+function AddDropdown({
+  onNew,
+  onUpload,
+  onTemplates,
+  fileInputRef,
+  onUploadChange,
+}: {
+  onNew: () => void;
+  onUpload: () => void;
+  onTemplates?: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onUploadChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="px-2 py-1 text-gray-400 hover:text-indigo-600 transition"
+        title="Add"
+      >
+        <Plus size={12} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
+          <button
+            type="button"
+            onClick={() => { onNew(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+          >
+            <Plus size={12} className="text-gray-400" /> New file
+          </button>
+          <button
+            type="button"
+            onClick={() => { onUpload(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+          >
+            <Upload size={12} className="text-gray-400" /> Upload
+          </button>
+          {onTemplates && (
+            <button
+              type="button"
+              onClick={() => { onTemplates(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+            >
+              <FileText size={12} className="text-gray-400" /> From templates
+            </button>
+          )}
+        </div>
+      )}
+      <input ref={fileInputRef} type="file" className="hidden" onChange={onUploadChange} multiple title="Upload files" />
+    </div>
+  );
+}
+
 const BUILTIN_SLUGS = ['table', 'board', 'calendar', 'document', 'text-editor', 'custom-view'];
 
 function AppTypeNode({ slug, label }: { slug: string; label: string }) {
@@ -544,15 +611,24 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
-      >
-        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        <Lock size={10} />
-        <span>Private</span>
-      </button>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+        >
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          <Lock size={10} />
+          <span>Private</span>
+        </button>
+        <AddDropdown
+          onNew={handleNewFile}
+          onUpload={() => fileInputRef.current?.click()}
+          onTemplates={onAddTemplate}
+          fileInputRef={fileInputRef}
+          onUploadChange={handleUpload}
+        />
+      </div>
 
       {open && (
         <div className="ml-2 pl-1">
@@ -583,34 +659,6 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
               <FileNode key={file.id} file={file} depth={1} />
             ))}
           </div>
-
-          {/* Add file actions */}
-          <div className="flex items-center gap-0.5 pt-1 px-1">
-            <button
-              type="button"
-              onClick={handleNewFile}
-              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
-            >
-              <Plus size={10} /> New
-            </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
-            >
-              <Upload size={10} /> Upload
-            </button>
-            {onAddTemplate && (
-              <button
-                type="button"
-                onClick={onAddTemplate}
-                className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
-              >
-                <FileText size={10} /> Templates
-              </button>
-            )}
-          </div>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} multiple title="Upload files" />
         </div>
       )}
     </div>
@@ -661,20 +709,29 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex-1 w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
-      >
-        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        <Globe size={10} />
-        <span>Shared</span>
-        {visibleFiles.length > 0 && (
-          <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal normal-case">
-            {visibleFiles.length}
-          </span>
-        )}
-      </button>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+        >
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          <Globe size={10} />
+          <span>Shared</span>
+          {visibleFiles.length > 0 && (
+            <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal normal-case">
+              {visibleFiles.length}
+            </span>
+          )}
+        </button>
+        <AddDropdown
+          onNew={handleNewFile}
+          onUpload={() => fileInputRef.current?.click()}
+          onTemplates={onAddTemplate}
+          fileInputRef={fileInputRef}
+          onUploadChange={handleUpload}
+        />
+      </div>
 
       {open && (
         <div className="ml-2 pl-1 space-y-0.5">
@@ -687,34 +744,6 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
               No shared files yet
             </p>
           )}
-
-          {/* Add file actions */}
-          <div className="flex items-center gap-0.5 pt-1 px-1">
-            <button
-              type="button"
-              onClick={handleNewFile}
-              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
-            >
-              <Plus size={10} /> New
-            </button>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
-            >
-              <Upload size={10} /> Upload
-            </button>
-            {onAddTemplate && (
-              <button
-                type="button"
-                onClick={onAddTemplate}
-                className="flex items-center gap-1 px-2 py-1 text-[11px] text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
-              >
-                <FileText size={10} /> Templates
-              </button>
-            )}
-          </div>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} multiple title="Upload files" />
         </div>
       )}
     </div>

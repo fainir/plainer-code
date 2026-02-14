@@ -14,7 +14,7 @@ COPY . .
 RUN pip install --no-cache-dir -e .
 
 # Expose port
-EXPOSE 8000
+EXPOSE ${PORT:-8000}
 
-# Start command with migrations
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Start command with migrations, using Railway's PORT variable
+CMD ["sh", "-c", "alembic upgrade head && echo 'Starting uvicorn on port ${PORT:-8000}' && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

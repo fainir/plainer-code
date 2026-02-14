@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.system_prompt import SYSTEM_PROMPT
 from app.agent.tools import TOOLS
 from app.models.file import File
-from app.services import file_service
+from app.services import file_service, marketplace_service
 from app.filestore.base import StorageBackend
 from app.websocket.manager import ConnectionManager
 
@@ -60,10 +60,20 @@ class PlainerAgent:
             for a in app_types
         ) if app_types else "(none)"
 
+        # Build marketplace commands listing
+        commands = await marketplace_service.list_marketplace_items(
+            self.db, item_type="command"
+        )
+        cmd_listing = "\n".join(
+            f"  - {c.name}: {c.description}"
+            for c in commands
+        ) if commands else "(none)"
+
         return SYSTEM_PROMPT.format(
             workspace_name=self.workspace_name,
             file_listing=listing,
             app_types=app_listing,
+            marketplace_commands=cmd_listing,
         )
 
     async def _ws_send(self, event_type: str, payload: dict):

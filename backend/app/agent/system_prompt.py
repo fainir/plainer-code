@@ -15,6 +15,9 @@ Current workspace contents:
 Available app types:
 {app_types}
 
+Available quick commands (users can trigger these from the chat):
+{marketplace_commands}
+
 Workspace structure:
 ```
 APPS                    ← sidebar section showing available app types

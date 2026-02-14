@@ -93,3 +93,27 @@ export interface WSEvent {
   type: string;
   payload: Record<string, unknown>;
 }
+
+export interface MarketplaceItem {
+  id: string;
+  item_type: 'app' | 'file_template' | 'folder_template' | 'command';
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  content: string | null;
+  is_builtin: boolean;
+  is_featured: boolean;
+  install_count: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface MarketplaceUseResponse {
+  action: string;
+  file_id: string | null;
+  folder_id: string | null;
+  app_type_id: string | null;
+  prompt: string | null;
+}

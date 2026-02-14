@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listConversations, createConversation, listMessages } from '../../api/drive';
+import { listMarketplaceItems } from '../../api/marketplace';
 import { useChatStore } from '../../stores/chatStore';
 import type { ToolCallInfo } from '../../stores/chatStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -9,6 +10,8 @@ import type { ChatMessage } from '../../lib/types';
 import {
   Send, X, Sparkles, Loader2, Bot, User, Key, WifiOff, Check, FileText,
   Square, Paperclip, MessageSquare, ChevronLeft, XCircle,
+  FileSearch, FilePlus, BarChart3, Code, Lightbulb, ClipboardList,
+  RefreshCw, BookOpen, Zap, KanbanSquare, TestTube2, MessageCircle,
 } from 'lucide-react';
 import ApiKeyDialog from '../ApiKeyDialog';
 
@@ -57,12 +60,24 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
     queryFn: () => listConversations(),
   });
 
-  // Auto-select or create first conversation
+  // Auto-select first conversation or auto-create one
+  const autoCreatingRef = useRef(false);
   useEffect(() => {
-    if (conversations && conversations.length > 0 && !activeConvoId) {
+    if (!conversations) return;
+    if (activeConvoId) return;
+    if (conversations.length > 0) {
       setActiveConvoId(conversations[0].id);
+    } else if (!autoCreatingRef.current) {
+      autoCreatingRef.current = true;
+      createConversation('New chat').then((convo) => {
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        setActiveConvoId(convo.id);
+        autoCreatingRef.current = false;
+      }).catch(() => {
+        autoCreatingRef.current = false;
+      });
     }
-  }, [conversations, activeConvoId]);
+  }, [conversations, activeConvoId, queryClient]);
 
   // Load messages when conversation changes
   const { data: savedMessages } = useQuery({
@@ -331,19 +346,12 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
         </div>
       )}
 
-      {/* No conversation state */}
+      {/* No conversation state - loading */}
       {!activeConvoId ? (
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="text-center">
-            <Sparkles size={32} className="mx-auto text-indigo-300 mb-3" />
-            <p className="text-gray-500 text-sm mb-4">Start a conversation with AI</p>
-            <button
-              type="button"
-              onClick={() => createConvoMutation.mutate()}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-            >
-              New chat
-            </button>
+            <Loader2 size={24} className="mx-auto text-indigo-400 animate-spin mb-3" />
+            <p className="text-gray-400 text-sm">Starting chat...</p>
           </div>
         </div>
       ) : (
@@ -351,12 +359,24 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && !isAgentTyping && (
-              <div className="text-center py-12">
-                <Bot size={32} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-400 text-sm">
-                  Ask me to create files, write code, or help with your project.
-                </p>
-              </div>
+              <CommandCards
+                onSelectCommand={(prompt) => {
+                  setInput('');
+                  addMessage({
+                    conversation_id: activeConvoId,
+                    sender_type: 'user',
+                    sender_id: userId,
+                    sender_name: userName,
+                    content: prompt,
+                    created_at: new Date().toISOString(),
+                  });
+                  setAgentTyping(true);
+                  send({
+                    type: 'agent.invoke',
+                    payload: { conversation_id: activeConvoId, message: prompt },
+                  });
+                }}
+              />
             )}
 
             {messages.map((msg, i) => (
@@ -497,6 +517,117 @@ function ToolProgress({ tools }: { tools: ToolCallInfo[] }) {
           <span className="truncate">{tc.label}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  'file-search': FileSearch,
+  'file-plus': FilePlus,
+  'bar-chart-3': BarChart3,
+  'code': Code,
+  'lightbulb': Lightbulb,
+  'clipboard-list': ClipboardList,
+  'refresh-cw': RefreshCw,
+  'book-open': BookOpen,
+  'zap': Zap,
+  'kanban-square': KanbanSquare,
+  'test-tube-2': TestTube2,
+  'message-circle': MessageCircle,
+  'sparkles': Sparkles,
+};
+
+function DynamicIcon({ name, size = 16, className }: { name: string; size?: number; className?: string }) {
+  const Icon = ICON_MAP[name] || Sparkles;
+  return <Icon size={size} className={className} />;
+}
+
+function CommandCards({ onSelectCommand }: { onSelectCommand: (prompt: string) => void }) {
+  const { data: commands } = useQuery({
+    queryKey: ['marketplace', 'command'],
+    queryFn: () => listMarketplaceItems({ item_type: 'command' }),
+  });
+
+  // Parse content to check requires_file
+  const noFileCommands = (commands || []).filter((cmd) => {
+    try {
+      const c = JSON.parse(cmd.content || '{}');
+      return !c.requires_file;
+    } catch {
+      return true;
+    }
+  });
+
+  const fileCommands = (commands || []).filter((cmd) => {
+    try {
+      const c = JSON.parse(cmd.content || '{}');
+      return c.requires_file;
+    } catch {
+      return false;
+    }
+  });
+
+  return (
+    <div className="py-6 px-2">
+      <div className="text-center mb-5">
+        <Sparkles size={28} className="mx-auto text-indigo-400 mb-2" />
+        <p className="text-sm text-gray-500">What would you like to do?</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {noFileCommands.slice(0, 6).map((cmd) => {
+          let prompt = '';
+          try {
+            prompt = JSON.parse(cmd.content || '{}').prompt || '';
+          } catch { /* skip */ }
+          return (
+            <button
+              key={cmd.id}
+              type="button"
+              onClick={() => onSelectCommand(prompt)}
+              className="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left group"
+            >
+              <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-200 transition">
+                <DynamicIcon name={cmd.icon} size={14} className="text-indigo-600" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-gray-800 leading-tight">{cmd.name}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{cmd.description}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {fileCommands.length > 0 && (
+        <>
+          <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-2 px-1">
+            With a file selected
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {fileCommands.slice(0, 6).map((cmd) => {
+              let prompt = '';
+              try {
+                prompt = JSON.parse(cmd.content || '{}').prompt || '';
+              } catch { /* skip */ }
+              return (
+                <button
+                  key={cmd.id}
+                  type="button"
+                  onClick={() => onSelectCommand(prompt)}
+                  className="flex items-start gap-2.5 p-3 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition text-left group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-gray-200 transition">
+                    <DynamicIcon name={cmd.icon} size={14} className="text-gray-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium text-gray-700 leading-tight">{cmd.name}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{cmd.description}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

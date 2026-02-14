@@ -7,6 +7,7 @@ from app.models.file import File, FileVersion
 from app.models.chat import Conversation, Message
 from app.models.sharing import FileShare, FolderShare
 from app.models.app_type import AppType
+from app.models.marketplace import MarketplaceItem
 
 __all__ = [
     "Base",
@@ -23,4 +24,5 @@ __all__ = [
     "FileShare",
     "FolderShare",
     "AppType",
+    "MarketplaceItem",
 ]

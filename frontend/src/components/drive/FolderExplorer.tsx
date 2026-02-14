@@ -36,7 +36,9 @@ import {
   Pencil,
   Eye,
   LayoutGrid,
+  Store,
 } from 'lucide-react';
+import MarketplaceModal from '../marketplace/MarketplaceModal';
 
 function splitFileName(name: string): { base: string; ext: string } {
   const dot = name.lastIndexOf('.');
@@ -600,6 +602,8 @@ function SharedSection() {
 export default function FolderExplorer() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const [showMarketplace, setShowMarketplace] = useState(false);
+  const { currentFolderId } = useDriveStore();
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -613,10 +617,27 @@ export default function FolderExplorer() {
         <div className="p-2 space-y-0.5">
           <FavoritesSection />
           <AppsSection />
+
+          {/* Marketplace button */}
+          <button
+            type="button"
+            onClick={() => setShowMarketplace(true)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-indigo-600 transition"
+          >
+            <Store size={10} />
+            <span>Marketplace</span>
+          </button>
+
           <PrivateSection />
           <SharedSection />
         </div>
       </div>
+
+      <MarketplaceModal
+        open={showMarketplace}
+        onClose={() => setShowMarketplace(false)}
+        currentFolderId={currentFolderId}
+      />
 
       {/* User */}
       <div className="px-4 py-3 border-t border-gray-100">

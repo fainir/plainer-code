@@ -336,6 +336,18 @@ async def create_app_type(
 
 # ── Instances ──────────────────────────────────────────
 
+@router.get("/instances", response_model=list[FileResponse])
+async def list_instances(
+    app_type_slug: str | None = None,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all instances, optionally filtered by app type slug."""
+    drive = await file_service.get_user_drive(db, user.id)
+    instances = await file_service.list_instances_by_app_type(db, drive.id, app_type_slug)
+    return [_file_response(i) for i in instances]
+
+
 @router.get("/files/{file_id}/instances", response_model=list[FileResponse])
 async def get_file_instances(
     file_id: uuid.UUID,

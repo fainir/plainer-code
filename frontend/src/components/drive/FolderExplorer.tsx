@@ -9,6 +9,7 @@ import {
   listFavoriteFiles,
   listFavoriteFolders,
   listAppTypes,
+  listInstancesByAppType,
   getFileInstances,
 } from '../../api/drive';
 import { useDriveStore } from '../../stores/driveStore';
@@ -302,11 +303,71 @@ function CollapsibleSection({
   );
 }
 
+const BUILTIN_SLUGS = ['table', 'board', 'calendar', 'document', 'text-editor', 'custom-view'];
+
+function AppTypeNode({ slug, label }: { slug: string; label: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const { selectedFileId, selectFile } = useDriveStore();
+
+  const { data: instances } = useQuery({
+    queryKey: ['app-type-instances', slug],
+    queryFn: () => listInstancesByAppType(slug),
+    enabled: expanded,
+  });
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-1.5 py-1 px-2 text-sm text-gray-600 rounded hover:bg-gray-100 transition"
+      >
+        <span className={`transition ${expanded ? 'text-gray-500' : 'text-gray-300'}`}>
+          {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+        </span>
+        {appTypeIcon(slug, 14)}
+        <span className="truncate flex-1 text-left">{label}</span>
+        {expanded && instances && (
+          <span className="text-[10px] text-gray-400">{instances.length}</span>
+        )}
+      </button>
+
+      {expanded && (
+        <div>
+          {instances && instances.length > 0 ? (
+            instances.map((inst) => (
+              <button
+                key={inst.id}
+                type="button"
+                onClick={() => selectFile(inst.id, inst.name, 'instance')}
+                className={`w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition ${
+                  selectedFileId === inst.id
+                    ? 'bg-indigo-50 text-indigo-700 font-medium'
+                    : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50'
+                }`}
+                style={{ paddingLeft: '42px' }}
+              >
+                <span className="truncate">{inst.name}</span>
+              </button>
+            ))
+          ) : (
+            <p className="text-[11px] text-gray-400 italic py-0.5" style={{ paddingLeft: '42px' }}>
+              No instances yet
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AppsSection() {
   const { data: appTypes } = useQuery({
     queryKey: ['app-types'],
     queryFn: () => listAppTypes(),
   });
+
+  const builtinApps = appTypes?.filter((a) => BUILTIN_SLUGS.includes(a.slug)) || [];
 
   return (
     <CollapsibleSection
@@ -314,16 +375,9 @@ function AppsSection() {
       icon={<LayoutGrid size={10} />}
       defaultOpen
     >
-      {appTypes && appTypes.length > 0 ? (
-        appTypes.map((app) => (
-          <div
-            key={app.id}
-            className="flex items-center gap-1.5 py-1 px-2 text-sm text-gray-600 rounded"
-            style={{ paddingLeft: '8px' }}
-          >
-            {appTypeIcon(app.slug, 14)}
-            <span className="truncate">{app.label}</span>
-          </div>
+      {builtinApps.length > 0 ? (
+        builtinApps.map((app) => (
+          <AppTypeNode key={app.id} slug={app.slug} label={app.label} />
         ))
       ) : (
         <p className="px-3 py-2 text-xs text-gray-400 italic">

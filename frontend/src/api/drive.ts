@@ -103,6 +103,13 @@ export async function createAppType(data: {
 
 // ── Instances ──────────────────────────────────────────
 
+export async function listInstancesByAppType(appTypeSlug?: string) {
+  const params: Record<string, string> = {};
+  if (appTypeSlug) params.app_type_slug = appTypeSlug;
+  const res = await api.get('/drive/instances', { params });
+  return res.data as FileItem[];
+}
+
 export async function getFileInstances(fileId: string) {
   const res = await api.get(`/drive/files/${fileId}/instances`);
   return res.data as FileItem[];

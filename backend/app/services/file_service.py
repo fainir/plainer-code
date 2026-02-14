@@ -445,6 +445,9 @@ async def get_file_content(
         return file.content_text
     data = await storage.get(file.storage_key)
     if data is None:
+        # Fallback for instances: return config if storage file is missing
+        if file.is_instance:
+            return file.instance_config or "{}"
         return None
     # For docx files, convert binary to HTML and cache
     if is_docx_file(file.name):
@@ -456,6 +459,28 @@ async def get_file_content(
         except Exception:
             return "<p>Unable to convert this document.</p>"
     return data.decode("utf-8")
+
+
+async def list_instances_by_app_type(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    app_type_slug: str | None = None,
+) -> list[File]:
+    """List all instances in a workspace, optionally filtered by app type slug."""
+    query = (
+        select(File)
+        .options(selectinload(File.app_type))
+        .where(
+            File.workspace_id == workspace_id,
+            File.is_instance.is_(True),
+            File.deleted_at.is_(None),
+        )
+    )
+    if app_type_slug:
+        query = query.join(AppType, File.app_type_id == AppType.id).where(
+            AppType.slug == app_type_slug
+        )
+    return list((await db.execute(query.order_by(File.name))).scalars().all())
 
 
 async def list_drive_folders(

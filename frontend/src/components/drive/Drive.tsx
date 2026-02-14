@@ -382,9 +382,10 @@ function InstanceRenderer({
     }
     case 'text-editor':
       return <RawViewer content={sourceContent} isCode={isCode} />;
+    case 'custom-view':
     default:
-      // Custom HTML template app type
-      if (instanceContent) {
+      // Custom HTML template — render instance content (HTML) in iframe
+      if (instanceContent && instanceContent !== '{}') {
         return (
           <div className="h-full -m-5">
             <HtmlViewRenderer content={instanceContent} />
@@ -564,6 +565,16 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
     // Instance rendering: use the source file's content with the app type's renderer
     if (isInstance && fileData) {
+      // Wait for source file content to load
+      if (sourceFileId && !sourceData) {
+        return (
+          <div className="space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: `${50 + Math.random() * 40}%` }} />
+            ))}
+          </div>
+        );
+      }
       const content = sourceData?.content || '';
       return (
         <InstanceRenderer

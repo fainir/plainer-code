@@ -114,7 +114,8 @@ TOOLS = [
                     "type": "string",
                     "description": (
                         "The slug of the app type to use. Built-in slugs: 'table', 'board', "
-                        "'calendar', 'document', 'text-editor'. Or a custom app type slug."
+                        "'calendar', 'document', 'text-editor', 'custom-view'. Use 'custom-view' "
+                        "for one-off custom HTML visualizations."
                     ),
                 },
                 "name": {

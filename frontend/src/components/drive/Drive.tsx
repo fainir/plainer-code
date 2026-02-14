@@ -436,8 +436,8 @@ function InstanceTabBar({
             onClick={() => onSelectInstance(inst.id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap ${
               isActive
-                ? 'bg-gray-800 text-indigo-400 shadow-sm border border-gray-700'
-                : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/60 border border-transparent'
+                ? 'bg-white text-indigo-600 shadow-sm border border-gray-200'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/60 border border-transparent'
             }`}
           >
             {appTypeToIcon(inst.app_type_slug)}
@@ -449,7 +449,7 @@ function InstanceTabBar({
       <button
         type="button"
         onClick={onCreateCustom}
-        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap text-gray-500 hover:text-gray-300 hover:bg-gray-800/60 border border-transparent"
+        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap text-gray-500 hover:text-gray-700 hover:bg-gray-100/60 border border-transparent"
         title="Create custom view with AI"
       >
         <Sparkles size={13} />
@@ -595,16 +595,16 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
     // Regular data file rendering (when clicked directly, not via instance)
     if (!fileData?.content) {
       return (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-          <h3 className="text-sm font-semibold text-gray-100 mb-4">File Information</h3>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">File Information</h3>
           <dl className="space-y-2 text-sm">
             <div className="flex gap-2">
               <dt className="text-gray-500 w-24">Name:</dt>
-              <dd className="text-gray-200">{fileData?.name}</dd>
+              <dd className="text-gray-700">{fileData?.name}</dd>
             </div>
             <div className="flex gap-2">
               <dt className="text-gray-500 w-24">Type:</dt>
-              <dd className="text-gray-200">{fileData?.mime_type}</dd>
+              <dd className="text-gray-700">{fileData?.mime_type}</dd>
             </div>
           </dl>
         </div>
@@ -638,21 +638,21 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-950">
+    <div className="h-full flex flex-col bg-white">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 shrink-0">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             onClick={clearSelectedFile}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition shrink-0"
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition shrink-0"
             title="Back to files"
           >
             <ArrowLeft size={16} />
           </button>
           <div className="flex items-center gap-2 min-w-0">
             {fileData && fileIcon(isInstance ? (detectedType) : detectedType)}
-            <span className="text-sm font-semibold text-gray-100 truncate">
+            <span className="text-sm font-semibold text-gray-900 truncate">
               {splitFileName(actualName).base}
               <span className="text-[0.8em] font-normal opacity-40">{splitFileName(actualName).ext}</span>
             </span>
@@ -660,7 +660,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
           <button
             type="button"
             onClick={() => favMutation.mutate()}
-            className="p-1 rounded hover:bg-gray-800 transition shrink-0"
+            className="p-1 rounded hover:bg-gray-100 transition shrink-0"
             title="Toggle favorite"
           >
             <Star size={14} className={favMutation.isPending ? 'text-gray-600' : fileData?.is_favorite ? 'text-amber-500 fill-amber-500' : 'text-gray-500 hover:text-amber-500'} />
@@ -671,8 +671,8 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
           onClick={toggleChatPanel}
           className={`p-1.5 rounded-lg transition ${
             chatPanelOpen
-              ? 'text-indigo-400 bg-indigo-950'
-              : 'text-gray-400 hover:bg-gray-800'
+              ? 'text-indigo-600 bg-indigo-50'
+              : 'text-gray-400 hover:bg-gray-100'
           }`}
           title="Toggle AI Chat"
         >
@@ -682,7 +682,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
       {/* Instance tab bar — shows sibling instances */}
       {siblingInstances && siblingInstances.length > 0 && (
-        <div className="relative flex items-center border-b border-gray-800 bg-gray-900/80 shrink-0">
+        <div className="relative flex items-center border-b border-gray-200 bg-gray-50 shrink-0">
           <InstanceTabBar
             instances={siblingInstances}
             activeInstanceId={isInstance ? fileId : null}
@@ -694,17 +694,17 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
       {/* Custom view with AI dialog */}
       {showCustomViewDialog && (
-        <div className="px-5 py-3 border-b border-gray-800 bg-indigo-950/50">
+        <div className="px-5 py-3 border-b border-gray-200 bg-indigo-50">
           <div className="flex items-start gap-2">
             <Sparkles size={16} className="text-indigo-400 mt-1.5 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-indigo-300 mb-1.5">Create a custom view with AI</p>
+              <p className="text-xs font-medium text-indigo-700 mb-1.5">Create a custom view with AI</p>
               <textarea
                 value={customViewPrompt}
                 onChange={(e) => setCustomViewPrompt(e.target.value)}
                 placeholder="Describe the view you want, e.g. 'A dashboard showing task completion rates by status'"
                 rows={2}
-                className="w-full px-3 py-2 text-sm border border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none bg-gray-900 text-white placeholder-gray-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none bg-white text-gray-900 placeholder-gray-400"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -824,11 +824,11 @@ export default function Drive() {
   const isLoading = filesLoading || foldersLoading;
 
   return (
-    <div className="h-full flex flex-col bg-gray-950">
+    <div className="h-full flex flex-col bg-white">
       {/* Search bar */}
       <div className="px-5 pt-4 pb-2 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex-1 flex items-center bg-gray-800/80 rounded-full px-4 py-2.5 gap-3">
+          <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-2.5 gap-3">
             <Search size={16} className="text-gray-500 shrink-0" />
             <span className="text-sm text-gray-500 flex-1">Search in Drive</span>
             <SlidersHorizontal size={16} className="text-gray-500 shrink-0" />
@@ -849,7 +849,7 @@ export default function Drive() {
                     onClick={() => navigateToBreadcrumb(i)}
                     className={`hover:text-indigo-400 transition ${
                       i === breadcrumbs.length - 1
-                        ? 'text-white font-medium'
+                        ? 'text-gray-900 font-medium'
                         : 'text-gray-500'
                     }`}
                   >
@@ -861,7 +861,7 @@ export default function Drive() {
             </div>
           ) : (
             <>
-              <h1 className="text-lg font-medium text-white">
+              <h1 className="text-lg font-medium text-gray-900">
                 {isShared ? 'Shared with me' : 'My Drive'}
               </h1>
               <ChevronDown size={16} className="text-gray-500" />
@@ -874,7 +874,7 @@ export default function Drive() {
               <button
                 type="button"
                 onClick={() => setShowCreateFolder(true)}
-                className="p-2 rounded-full hover:bg-gray-800 text-gray-400 transition"
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition"
                 title="New folder"
               >
                 <FolderPlus size={18} />
@@ -882,7 +882,7 @@ export default function Drive() {
               <button
                 type="button"
                 onClick={() => setShowCreateFile(true)}
-                className="p-2 rounded-full hover:bg-gray-800 text-gray-400 transition"
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition"
                 title="New file"
               >
                 <Plus size={18} />
@@ -890,7 +890,7 @@ export default function Drive() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded-full hover:bg-gray-800 text-gray-400 transition"
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition"
                 title="Upload"
               >
                 <Upload size={18} />
@@ -910,17 +910,17 @@ export default function Drive() {
             onClick={toggleChatPanel}
             className={`p-2 rounded-full transition ${
               chatPanelOpen
-                ? 'text-indigo-400 bg-indigo-950'
-                : 'text-gray-400 hover:bg-gray-800'
+                ? 'text-indigo-600 bg-indigo-50'
+                : 'text-gray-400 hover:bg-gray-100'
             }`}
             title="Toggle AI Chat"
           >
             <MessageSquare size={18} />
           </button>
-          <button type="button" className="p-2 rounded-full hover:bg-gray-800 text-gray-400 transition" title="List view">
+          <button type="button" className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition" title="List view">
             <List size={18} />
           </button>
-          <button type="button" className="p-2 rounded-full hover:bg-gray-800 text-gray-400 transition" title="Details">
+          <button type="button" className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition" title="Details">
             <Info size={18} />
           </button>
         </div>
@@ -932,7 +932,7 @@ export default function Drive() {
           <button
             key={label}
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-gray-800 border border-gray-700 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 border border-gray-200 transition"
           >
             {label}
             <ChevronDown size={12} />
@@ -943,14 +943,14 @@ export default function Drive() {
       {/* Create forms */}
       <div className="px-5">
         {showCreateFolder && (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-3">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 placeholder="Folder name"
-                className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-white placeholder-gray-500"
+                className="flex-1 px-3 py-1.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
                 autoFocus
               />
               <button
@@ -964,7 +964,7 @@ export default function Drive() {
               <button
                 type="button"
                 onClick={() => setShowCreateFolder(false)}
-                className="px-3 py-1.5 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-gray-700"
+                className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-100"
               >
                 Cancel
               </button>
@@ -973,14 +973,14 @@ export default function Drive() {
         )}
 
         {showCreateFile && (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-3">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
             <div className="space-y-2">
               <input
                 type="text"
                 value={newFileName}
                 onChange={(e) => setNewFileName(e.target.value)}
                 placeholder="File name (e.g. app.py, README.md)"
-                className="w-full px-3 py-1.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-white placeholder-gray-500"
+                className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
                 autoFocus
               />
               <textarea
@@ -988,7 +988,7 @@ export default function Drive() {
                 onChange={(e) => setNewFileContent(e.target.value)}
                 placeholder="File content..."
                 rows={5}
-                className="w-full px-3 py-1.5 bg-gray-900 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-white placeholder-gray-500 font-mono"
+                className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm text-gray-900 placeholder-gray-400 font-mono"
               />
               <div className="flex gap-2">
                 <button
@@ -1002,7 +1002,7 @@ export default function Drive() {
                 <button
                   type="button"
                   onClick={() => setShowCreateFile(false)}
-                  className="px-3 py-1.5 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-gray-700"
+                  className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-100"
                 >
                   Cancel
                 </button>
@@ -1022,11 +1022,11 @@ export default function Drive() {
                 key={file.id}
                 type="button"
                 onClick={() => selectFile(file.id, file.name, file.file_type)}
-                className="flex items-center gap-2.5 px-3 py-2 bg-gray-800 rounded-xl border border-gray-700 hover:bg-gray-750 hover:border-gray-600 transition min-w-0 shrink-0"
+                className="flex items-center gap-2.5 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition min-w-0 shrink-0"
               >
                 {fileIcon(file.file_type)}
                 <div className="min-w-0 text-left">
-                  <p className="text-xs text-gray-200 font-medium truncate max-w-[100px]">
+                  <p className="text-xs text-gray-800 font-medium truncate max-w-[100px]">
                     {splitFileName(file.name).base}
                   </p>
                   <p className="text-[10px] text-gray-500 truncate">
@@ -1044,17 +1044,17 @@ export default function Drive() {
         {isLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-gray-800 rounded-lg animate-pulse" />
+              <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
             ))}
           </div>
         ) : (folders?.length || 0) === 0 && visibleFiles.length === 0 ? (
           <div className="text-center py-16">
-            <FileIcon size={40} className="mx-auto text-gray-700 mb-3" />
-            <p className="text-gray-400 text-sm mb-1">
+            <FileIcon size={40} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500 text-sm mb-1">
               {isShared ? 'Nothing shared yet' : 'No files yet'}
             </p>
             {isPrivate && (
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-400">
                 Create a file or use the AI chat to generate one
               </p>
             )}
@@ -1062,7 +1062,7 @@ export default function Drive() {
         ) : (
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-gray-200">
                 <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5">
                   Name
                 </th>
@@ -1083,12 +1083,12 @@ export default function Drive() {
                   <tr
                     key={folder.id}
                     onClick={() => navigateToFolder(folder.id, folder.name)}
-                    className="border-b border-gray-800/50 hover:bg-gray-800/60 transition cursor-pointer"
+                    className="border-b border-gray-200/50 hover:bg-gray-100/60 transition cursor-pointer"
                   >
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-3">
-                        <FolderIcon size={18} className="text-gray-400 shrink-0" />
-                        <span className="text-sm text-gray-200">
+                        <FolderIcon size={18} className="text-amber-400 shrink-0" />
+                        <span className="text-sm text-gray-800">
                           {folder.name}
                         </span>
                         {folder.is_favorite && (
@@ -1113,12 +1113,12 @@ export default function Drive() {
                 <tr
                   key={file.id}
                   onClick={() => selectFile(file.id, file.name, file.file_type)}
-                  className="border-b border-gray-800/50 hover:bg-gray-800/60 transition cursor-pointer"
+                  className="border-b border-gray-200/50 hover:bg-gray-100/60 transition cursor-pointer"
                 >
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
                       {fileIcon(file.file_type)}
-                      <span className="text-sm text-gray-200">
+                      <span className="text-sm text-gray-800">
                         {splitFileName(file.name).base}
                         <span className="text-[0.8em] font-normal opacity-40">{splitFileName(file.name).ext}</span>
                       </span>

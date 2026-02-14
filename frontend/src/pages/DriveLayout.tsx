@@ -20,7 +20,7 @@ export default function DriveLayout() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <p className="text-gray-500">Failed to load your drive</p>
         </div>
@@ -30,27 +30,27 @@ export default function DriveLayout() {
 
   if (isLoading || !drive) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-pulse text-gray-400">Loading your drive...</div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-950">
+    <div className="h-screen flex overflow-hidden bg-white">
       {/* Left: Folder Explorer — fixed width */}
       <div className="w-56 shrink-0 h-full">
         <FolderExplorer />
       </div>
 
       {/* Center: File Viewer — flexible */}
-      <div className="flex-1 min-w-0 h-full overflow-hidden border-l border-gray-800">
+      <div className="flex-1 min-w-0 h-full overflow-hidden border-l border-gray-200">
         <Drive />
       </div>
 
       {/* Right: Chat Panel — fixed width */}
       {chatPanelOpen && (
-        <div className="w-[400px] shrink-0 h-full border-l border-gray-800">
+        <div className="w-[400px] shrink-0 h-full border-l border-gray-200">
           <ChatPanel
             send={send}
             connected={connected}

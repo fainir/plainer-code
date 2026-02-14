@@ -36,7 +36,6 @@ import {
   Pencil,
   Eye,
   LayoutGrid,
-  Store,
 } from 'lucide-react';
 import MarketplaceModal from '../marketplace/MarketplaceModal';
 
@@ -363,7 +362,7 @@ function AppTypeNode({ slug, label }: { slug: string; label: string }) {
   );
 }
 
-function AppsSection() {
+function AppsSection({ onAddApp }: { onAddApp?: () => void }) {
   const { data: appTypes } = useQuery({
     queryKey: ['app-types'],
     queryFn: () => listAppTypes(),
@@ -377,6 +376,8 @@ function AppsSection() {
       label="Apps"
       icon={<LayoutGrid size={10} />}
       defaultOpen
+      onAction={onAddApp}
+      actionTitle="Add app"
     >
       {builtinApps.length > 0 ? (
         builtinApps.map((app) => (
@@ -469,7 +470,7 @@ function FavoritesSection() {
   );
 }
 
-function PrivateSection() {
+function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
   const { view, navigateToRoot, currentFolderId } = useDriveStore();
   const isActive = view === 'private';
   const [open, setOpen] = useState(true);
@@ -509,15 +510,27 @@ function PrivateSection() {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex-1 w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
-      >
-        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        <Lock size={10} />
-        <span>Private</span>
-      </button>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+        >
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          <Lock size={10} />
+          <span>Private</span>
+        </button>
+        {onAddTemplate && (
+          <button
+            type="button"
+            onClick={onAddTemplate}
+            className="px-2 py-1 text-gray-400 hover:text-indigo-600 transition"
+            title="Add from templates"
+          >
+            <Plus size={12} />
+          </button>
+        )}
+      </div>
 
       {open && (
         <div className="ml-2 pl-1">
@@ -602,7 +615,7 @@ function SharedSection() {
 export default function FolderExplorer() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [marketplaceTab, setMarketplaceTab] = useState<string | null>(null);
   const { currentFolderId } = useDriveStore();
 
   return (
@@ -616,27 +629,17 @@ export default function FolderExplorer() {
       <div className="flex-1 overflow-y-auto">
         <div className="p-2 space-y-0.5">
           <FavoritesSection />
-          <AppsSection />
-
-          {/* Marketplace button */}
-          <button
-            type="button"
-            onClick={() => setShowMarketplace(true)}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-indigo-600 transition"
-          >
-            <Store size={10} />
-            <span>Marketplace</span>
-          </button>
-
-          <PrivateSection />
+          <AppsSection onAddApp={() => setMarketplaceTab('app')} />
+          <PrivateSection onAddTemplate={() => setMarketplaceTab('template')} />
           <SharedSection />
         </div>
       </div>
 
       <MarketplaceModal
-        open={showMarketplace}
-        onClose={() => setShowMarketplace(false)}
+        open={!!marketplaceTab}
+        onClose={() => setMarketplaceTab(null)}
         currentFolderId={currentFolderId}
+        initialTab={marketplaceTab || undefined}
       />
 
       {/* User */}

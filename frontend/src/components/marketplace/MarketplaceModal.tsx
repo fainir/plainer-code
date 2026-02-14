@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listMarketplaceItems, useMarketplaceItem } from '../../api/marketplace';
 import { useChatStore } from '../../stores/chatStore';
 import type { MarketplaceItem } from '../../lib/types';
 import toast from 'react-hot-toast';
 import {
-  X, Search, Download, Play, Sparkles, FolderPlus, FileText, LayoutGrid,
+  X, Search, Download, Play, Sparkles, FolderPlus, FileText,
   Terminal, Package, TrendingUp,
   // Icons for items
   BarChart3, PieChart, Clock, Flame, Grid3x3, Calculator,
@@ -18,13 +18,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   currentFolderId?: string | null;
+  initialTab?: string;
 }
 
 const TABS = [
-  { key: 'all', label: 'All', icon: LayoutGrid },
   { key: 'app', label: 'Apps', icon: Sparkles },
-  { key: 'file_template', label: 'Templates', icon: FileText },
-  { key: 'folder_template', label: 'Folders', icon: FolderPlus },
+  { key: 'template', label: 'Templates', icon: FileText },
   { key: 'command', label: 'Commands', icon: Terminal },
 ] as const;
 
@@ -62,22 +61,35 @@ function ItemIcon({ name, size = 18, className }: { name: string; size?: number;
   return <Icon size={size} className={className} />;
 }
 
-export default function MarketplaceModal({ open, onClose, currentFolderId }: Props) {
-  const [activeTab, setActiveTab] = useState<string>('all');
+export default function MarketplaceModal({ open, onClose, currentFolderId, initialTab }: Props) {
+  const [activeTab, setActiveTab] = useState<string>(initialTab || 'app');
   const [search, setSearch] = useState('');
   const [usingItem, setUsingItem] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { setPendingPrompt } = useChatStore();
 
-  const { data: items, isLoading } = useQuery({
+  // Sync tab when initialTab changes (e.g. opening from different buttons)
+  useEffect(() => {
+    if (initialTab && open) setActiveTab(initialTab);
+  }, [initialTab, open]);
+
+  // Map tab key to API item_type(s)
+  const itemTypeParam = activeTab === 'template' ? undefined : activeTab;
+
+  const { data: rawItems, isLoading } = useQuery({
     queryKey: ['marketplace', activeTab, search],
     queryFn: () =>
       listMarketplaceItems({
-        item_type: activeTab === 'all' ? undefined : activeTab,
+        item_type: itemTypeParam,
         search: search || undefined,
       }),
     enabled: open,
   });
+
+  // For the "template" tab, filter to only file_template + folder_template client-side
+  const items = activeTab === 'template'
+    ? (rawItems || []).filter((i) => i.item_type === 'file_template' || i.item_type === 'folder_template')
+    : rawItems;
 
   if (!open) return null;
 

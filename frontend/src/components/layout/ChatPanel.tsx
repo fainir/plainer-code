@@ -14,6 +14,7 @@ import {
   RefreshCw, BookOpen, Zap, KanbanSquare, TestTube2, MessageCircle,
 } from 'lucide-react';
 import ApiKeyDialog from '../ApiKeyDialog';
+import MarketplaceModal from '../marketplace/MarketplaceModal';
 
 interface Attachment {
   type: 'image';
@@ -35,6 +36,7 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
   const [activeConvoId, setActiveConvoId] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -360,6 +362,7 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.length === 0 && !isAgentTyping && (
               <CommandCards
+                onMoreCommands={() => setShowMarketplace(true)}
                 onSelectCommand={(prompt) => {
                   setInput('');
                   addMessage({
@@ -492,6 +495,11 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
         </>
       )}
       <ApiKeyDialog open={showApiKey} onClose={() => setShowApiKey(false)} />
+      <MarketplaceModal
+        open={showMarketplace}
+        onClose={() => setShowMarketplace(false)}
+        initialTab="command"
+      />
     </div>
   );
 }
@@ -542,7 +550,7 @@ function DynamicIcon({ name, size = 16, className }: { name: string; size?: numb
   return <Icon size={size} className={className} />;
 }
 
-function CommandCards({ onSelectCommand }: { onSelectCommand: (prompt: string) => void }) {
+function CommandCards({ onSelectCommand, onMoreCommands }: { onSelectCommand: (prompt: string) => void; onMoreCommands?: () => void }) {
   const { data: commands } = useQuery({
     queryKey: ['marketplace', 'command'],
     queryFn: () => listMarketplaceItems({ item_type: 'command' }),
@@ -627,6 +635,15 @@ function CommandCards({ onSelectCommand }: { onSelectCommand: (prompt: string) =
             })}
           </div>
         </>
+      )}
+      {onMoreCommands && (
+        <button
+          type="button"
+          onClick={onMoreCommands}
+          className="mt-4 w-full text-center text-xs text-indigo-500 hover:text-indigo-700 transition"
+        >
+          More commands...
+        </button>
       )}
     </div>
   );

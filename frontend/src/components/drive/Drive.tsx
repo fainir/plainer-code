@@ -4,7 +4,6 @@ import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, get
 import DocxViewer from './DocxViewer';
 import { useDriveStore } from '../../stores/driveStore';
 import { useChatStore } from '../../stores/chatStore';
-import type { FileViewMode } from '../../stores/driveStore';
 import { useUIStore } from '../../stores/uiStore';
 import type { FileItem, FolderItem } from '../../lib/types';
 import {
@@ -28,7 +27,6 @@ import {
   Eye,
   Star,
   Upload,
-  X,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toggleFileFavorite } from '../../api/drive';
@@ -399,14 +397,6 @@ function InstanceRenderer({
 
 // ── View Mode Tabs ──────────────────────────────────────
 
-interface ViewTab {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  instanceId?: string;
-  mode?: FileViewMode;
-}
-
 function appTypeToIcon(slug: string | null, size: number = 14) {
   switch (slug) {
     case 'table': return <Table size={size} />;
@@ -466,7 +456,7 @@ function InstanceTabBar({
 // ── FileViewer ──────────────────────────────────────────
 
 function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) {
-  const { clearSelectedFile, viewMode, setViewMode, selectedFileType, selectFile } = useDriveStore();
+  const { clearSelectedFile, viewMode, selectedFileType, selectFile } = useDriveStore();
   const { toggleChatPanel, chatPanelOpen } = useUIStore();
   const queryClient = useQueryClient();
 
@@ -606,7 +596,6 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
     }
 
     // Direct data file rendering based on viewMode
-    const ext = actualName.split('.').pop()?.toLowerCase() || '';
     if (viewMode === 'docx') {
       return <DocxViewer fileId={fileId} content={fileData.content} fileName={actualName} />;
     }

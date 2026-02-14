@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Group, Panel, Separator } from 'react-resizable-panels';
 import { getMyDrive } from '../api/drive';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useUIStore } from '../stores/uiStore';
@@ -6,6 +7,14 @@ import { useAuthStore } from '../stores/authStore';
 import FolderExplorer from '../components/drive/FolderExplorer';
 import ChatPanel from '../components/layout/ChatPanel';
 import Drive from '../components/drive/Drive';
+
+function ResizeHandle() {
+  return (
+    <Separator className="group w-1 relative flex items-center justify-center hover:bg-indigo-100 active:bg-indigo-200 transition-colors">
+      <div className="w-px h-full bg-gray-200 group-hover:bg-indigo-400 group-active:bg-indigo-500 transition-colors" />
+    </Separator>
+  );
+}
 
 export default function DriveLayout() {
   const { chatPanelOpen } = useUIStore();
@@ -37,28 +46,41 @@ export default function DriveLayout() {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-white">
-      {/* Left: Folder Explorer — fixed width */}
-      <div className="w-56 shrink-0 h-full">
-        <FolderExplorer />
-      </div>
+    <div className="h-screen bg-white">
+      <Group orientation="horizontal">
+        {/* Left: Folder Explorer */}
+        <Panel defaultSize={15} minSize={10} maxSize={30}>
+          <div className="h-full overflow-hidden">
+            <FolderExplorer />
+          </div>
+        </Panel>
 
-      {/* Center: File Viewer — flexible */}
-      <div className="flex-1 min-w-0 h-full overflow-hidden border-l border-gray-200">
-        <Drive />
-      </div>
+        <ResizeHandle />
 
-      {/* Right: Chat Panel — fixed width */}
-      {chatPanelOpen && (
-        <div className="w-[400px] shrink-0 h-full border-l border-gray-200">
-          <ChatPanel
-            send={send}
-            connected={connected}
-            userName={user?.display_name || 'You'}
-            userId={user?.id || ''}
-          />
-        </div>
-      )}
+        {/* Center: Drive */}
+        <Panel minSize={30}>
+          <div className="h-full overflow-hidden">
+            <Drive />
+          </div>
+        </Panel>
+
+        {/* Right: Chat Panel */}
+        {chatPanelOpen && (
+          <>
+            <ResizeHandle />
+            <Panel defaultSize={25} minSize={15} maxSize={45}>
+              <div className="h-full overflow-hidden">
+                <ChatPanel
+                  send={send}
+                  connected={connected}
+                  userName={user?.display_name || 'You'}
+                  userId={user?.id || ''}
+                />
+              </div>
+            </Panel>
+          </>
+        )}
+      </Group>
     </div>
   );
 }

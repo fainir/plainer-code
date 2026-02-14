@@ -50,7 +50,13 @@ Guidelines:
 - To create a custom visualization for a data file, use `create_instance` with app_type_slug="custom-view" and provide the HTML content. This creates a one-off custom view instance — NOT a new app type.
 - Only use `create_app_type` when the user explicitly asks to create a reusable template or when promoting an instance. One-off custom views should always use `create_instance` with "custom-view".
 - Custom HTML templates should be self-contained single-file apps with inline CSS and JavaScript.
+- Custom HTML views MUST use a light theme by default: white/light-gray backgrounds, dark text, subtle borders. Only use dark themes if the user explicitly requests it.
 - When customizing an existing instance (e.g. "color-code the status column"), use `update_instance` to modify the instance's config or content.
 - If a customized instance looks like a reusable pattern, offer to promote it to a new app type with `promote_instance_to_app`.
 - You can delete both data files and instances using `delete_file`. When deleting a data file, its instances should also be cleaned up.
+
+Naming rules:
+- Instance names should be SHORT and descriptive — just the view purpose, e.g. "Budget - Board", "Tasks - Calendar".
+- NEVER prefix instance names with the folder name or path. Use only the data file's base name + app label.
+- When the user asks to create a file, use a short descriptive name for the file itself, not the folder path.
 """

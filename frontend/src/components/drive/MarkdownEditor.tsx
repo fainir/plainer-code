@@ -7,7 +7,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Markdown } from 'tiptap-markdown';
+import { Markdown, type MarkdownStorage } from 'tiptap-markdown';
 import { updateFileContent } from '../../api/drive';
 import {
   Bold,
@@ -199,7 +199,7 @@ export default function MarkdownEditor({ fileId, content, fileName }: MarkdownEd
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         if (editor) {
-          const md = editor.storage.markdown.getMarkdown();
+          const md = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown.getMarkdown();
           saveMutation.mutate(md);
         }
       }, 3000);
@@ -209,7 +209,7 @@ export default function MarkdownEditor({ fileId, content, fileName }: MarkdownEd
   const handleSave = useCallback(() => {
     if (editor) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      const md = editor.storage.markdown.getMarkdown();
+      const md = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown.getMarkdown();
       saveMutation.mutate(md);
     }
   }, [editor, saveMutation]);

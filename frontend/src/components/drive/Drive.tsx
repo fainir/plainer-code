@@ -176,33 +176,6 @@ function TableViewer({ content }: { content: string }) {
   );
 }
 
-function MarkdownViewer({ content }: { content: string }) {
-  const html = useMemo(() => {
-    let result = content;
-    result = result.replace(/^### (.+)$/gm, '<h3 class="text-base font-semibold text-gray-900 mt-4 mb-2">$1</h3>');
-    result = result.replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold text-gray-900 mt-5 mb-2">$1</h2>');
-    result = result.replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold text-gray-900 mt-6 mb-3">$1</h1>');
-    result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    result = result.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-pink-600">$1</code>');
-    result = result.replace(/```[\s\S]*?\n([\s\S]*?)```/g, '<pre class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm font-mono text-gray-800 overflow-auto my-3">$1</pre>');
-    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-indigo-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
-    result = result.replace(/^[*-] (.+)$/gm, '<li class="ml-4 list-disc text-gray-800">$1</li>');
-    result = result.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-gray-800">$1</li>');
-    result = result.replace(/^---$/gm, '<hr class="my-4 border-gray-200" />');
-    result = result.replace(/\n\n/g, '</p><p class="text-sm text-gray-800 mb-3">');
-    result = result.replace(/\n/g, '<br />');
-    return `<p class="text-sm text-gray-800 mb-3">${result}</p>`;
-  }, [content]);
-
-  return (
-    <div
-      className="prose prose-sm max-w-none"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
 function KanbanViewer({ content }: { content: string }) {
   const { headers, rows } = useMemo(() => parseCSV(content), [content]);
 

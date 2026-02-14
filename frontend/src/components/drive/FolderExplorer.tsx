@@ -39,7 +39,10 @@ import {
   Eye,
   LayoutGrid,
   Upload,
+  Package,
 } from 'lucide-react';
+import { useChatStore } from '../../stores/chatStore';
+import { useUIStore } from '../../stores/uiStore';
 import MarketplaceModal from '../marketplace/MarketplaceModal';
 
 function splitFileName(name: string): { base: string; ext: string } {
@@ -423,7 +426,64 @@ function AppTypeNode({ slug, label }: { slug: string; label: string }) {
   );
 }
 
-function AppsSection({ onAddApp }: { onAddApp?: () => void }) {
+function AppAddDropdown({
+  onCreateCustom,
+  onFromMarketplace,
+}: {
+  onCreateCustom: () => void;
+  onFromMarketplace: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+      >
+        <Plus size={11} />
+        <span>New App</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 bottom-full mb-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+          <button
+            type="button"
+            onClick={() => { onCreateCustom(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+          >
+            <Sparkles size={12} className="text-indigo-400" /> Create with AI
+          </button>
+          <button
+            type="button"
+            onClick={() => { onFromMarketplace(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+          >
+            <Package size={12} className="text-gray-400" /> From marketplace
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AppsSection({
+  onCreateCustomApp,
+  onMarketplaceApp,
+}: {
+  onCreateCustomApp?: () => void;
+  onMarketplaceApp?: () => void;
+}) {
   const { data: appTypes } = useQuery({
     queryKey: ['app-types'],
     queryFn: () => listAppTypes(),
@@ -447,15 +507,11 @@ function AppsSection({ onAddApp }: { onAddApp?: () => void }) {
           Loading apps...
         </p>
       )}
-      {onAddApp && (
-        <button
-          type="button"
-          onClick={onAddApp}
-          className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
-        >
-          <Plus size={11} />
-          <span>New App</span>
-        </button>
+      {onCreateCustomApp && onMarketplaceApp && (
+        <AppAddDropdown
+          onCreateCustom={onCreateCustomApp}
+          onFromMarketplace={onMarketplaceApp}
+        />
       )}
     </CollapsibleSection>
   );
@@ -760,7 +816,15 @@ export default function FolderExplorer() {
       <div className="flex-1 overflow-y-auto">
         <div className="p-2 space-y-0.5">
           <FavoritesSection />
-          <AppsSection onAddApp={() => setMarketplaceTab('app')} />
+          <AppsSection
+            onCreateCustomApp={() => {
+              useChatStore.getState().setPendingPrompt(
+                'I want to create a new custom app. Ask me what kind of app I want and then create it for me.'
+              );
+              useUIStore.getState().setChatPanelOpen(true);
+            }}
+            onMarketplaceApp={() => setMarketplaceTab('app')}
+          />
           <PrivateSection onAddTemplate={() => setMarketplaceTab('template')} />
           <SharedSection onAddTemplate={() => setMarketplaceTab('template')} />
         </div>

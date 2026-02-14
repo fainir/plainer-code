@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { listMarketplaceItems, useMarketplaceItem } from '../../api/marketplace';
+import { listMarketplaceItems, listMyMarketplaceItems, useMarketplaceItem, submitToMarketplace } from '../../api/marketplace';
 import { useChatStore } from '../../stores/chatStore';
+import { useAuthStore } from '../../stores/authStore';
 import type { MarketplaceItem } from '../../lib/types';
 import toast from 'react-hot-toast';
 import {
   X, Search, Download, Play, Sparkles, FolderPlus, FileText,
-  Terminal, Package, TrendingUp,
+  Terminal, Package, TrendingUp, Send,
   // Icons for items
   BarChart3, PieChart, Clock, Flame, Grid3x3, Calculator,
   GanttChart, TreePine, Table, Presentation,
@@ -67,6 +68,7 @@ export default function MarketplaceModal({ open, onClose, currentFolderId, initi
   const [usingItem, setUsingItem] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { setPendingPrompt } = useChatStore();
+  const { user } = useAuthStore();
 
   // Sync tab when initialTab changes (e.g. opening from different buttons)
   useEffect(() => {
@@ -85,6 +87,17 @@ export default function MarketplaceModal({ open, onClose, currentFolderId, initi
       }),
     enabled: open,
   });
+
+  // Fetch user's own items for current tab
+  const { data: myItems } = useQuery({
+    queryKey: ['marketplace-mine', activeTab],
+    queryFn: () => listMyMarketplaceItems({ item_type: itemTypeParam }),
+    enabled: open,
+  });
+
+  const myFilteredItems = activeTab === 'template'
+    ? (myItems || []).filter((i) => i.item_type === 'file_template' || i.item_type === 'folder_template')
+    : myItems;
 
   // For the "template" tab, filter to only file_template + folder_template client-side
   const items = activeTab === 'template'
@@ -128,6 +141,17 @@ export default function MarketplaceModal({ open, onClose, currentFolderId, initi
       toast.error(`Failed to use "${item.name}"`);
     } finally {
       setUsingItem(null);
+    }
+  }
+
+  async function handleSubmit(itemId: string) {
+    try {
+      await submitToMarketplace(itemId);
+      queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace-mine'] });
+      toast.success('Submitted for review!');
+    } catch {
+      toast.error('Failed to submit');
     }
   }
 
@@ -191,61 +215,121 @@ export default function MarketplaceModal({ open, onClose, currentFolderId, initi
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           {isLoading ? (
             <div className="text-center py-12 text-gray-400 text-sm">Loading...</div>
-          ) : !items || items.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 text-sm">No items found</div>
           ) : (
             <div className="space-y-5">
-              {categories.map((cat) => {
-                const catItems = items.filter((i) => i.category === cat);
-                if (catItems.length === 0) return null;
-                return (
-                  <div key={cat}>
-                    <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-2">
-                      {cat}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {catItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-sm transition group"
-                        >
-                          <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition">
-                            <ItemIcon name={item.icon} size={16} className="text-gray-500 group-hover:text-indigo-600 transition" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="text-sm font-medium text-gray-800 truncate">{item.name}</div>
-                                <div className="text-[11px] text-gray-400 line-clamp-2 mt-0.5">{item.description}</div>
-                              </div>
+              {/* My Items section */}
+              {myFilteredItems && myFilteredItems.length > 0 && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-indigo-500 font-medium mb-2">
+                    My Items
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {myFilteredItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-start gap-3 p-3 rounded-xl border border-indigo-200 hover:border-indigo-300 hover:shadow-sm transition group"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
+                          <ItemIcon name={item.icon} size={16} className="text-indigo-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-800 truncate">{item.name}</div>
+                              <div className="text-[11px] text-gray-400 line-clamp-2 mt-0.5">{item.description}</div>
+                            </div>
+                            <div className="flex flex-col gap-1 shrink-0">
                               <button
                                 type="button"
                                 onClick={() => handleUse(item)}
                                 disabled={usingItem === item.id}
-                                className="shrink-0 mt-0.5 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition disabled:opacity-50"
+                                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition disabled:opacity-50"
                               >
-                                {item.item_type === 'app' ? (
-                                  <><Download size={11} /> Install</>
-                                ) : item.item_type === 'command' ? (
+                                {item.item_type === 'command' ? (
                                   <><Play size={11} /> Run</>
                                 ) : (
                                   <><Download size={11} /> Use</>
                                 )}
                               </button>
+                              {item.status === 'draft' && item.created_by_id === user?.id && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSubmit(item.id)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 transition"
+                                >
+                                  <Send size={10} /> Submit
+                                </button>
+                              )}
+                              {item.status === 'submitted' && (
+                                <span className="text-[10px] text-amber-500 px-1">Pending review</span>
+                              )}
                             </div>
-                            {item.install_count > 0 && (
-                              <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                                <TrendingUp size={10} />
-                                {item.install_count} uses
-                              </div>
-                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
+                </div>
+              )}
+
+              {/* Community items */}
+              {!items || items.length === 0 ? (
+                !myFilteredItems?.length && (
+                  <div className="text-center py-12 text-gray-400 text-sm">No items found</div>
+                )
+              ) : (
+                categories.map((cat) => {
+                  const catItems = items.filter((i) => i.category === cat);
+                  if (catItems.length === 0) return null;
+                  return (
+                    <div key={cat}>
+                      <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-2">
+                        {cat}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {catItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-sm transition group"
+                          >
+                            <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition">
+                              <ItemIcon name={item.icon} size={16} className="text-gray-500 group-hover:text-indigo-600 transition" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium text-gray-800 truncate">{item.name}</div>
+                                  <div className="text-[11px] text-gray-400 line-clamp-2 mt-0.5">{item.description}</div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUse(item)}
+                                  disabled={usingItem === item.id}
+                                  className="shrink-0 mt-0.5 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition disabled:opacity-50"
+                                >
+                                  {item.item_type === 'app' ? (
+                                    <><Download size={11} /> Install</>
+                                  ) : item.item_type === 'command' ? (
+                                    <><Play size={11} /> Run</>
+                                  ) : (
+                                    <><Download size={11} /> Use</>
+                                  )}
+                                </button>
+                              </div>
+                              {item.install_count > 0 && (
+                                <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                                  <TrendingUp size={10} />
+                                  {item.install_count} uses
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           )}
         </div>

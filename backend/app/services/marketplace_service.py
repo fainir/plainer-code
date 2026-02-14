@@ -14,6 +14,8 @@ async def list_marketplace_items(
     item_type: str | None = None,
     category: str | None = None,
     search: str | None = None,
+    created_by_id: uuid.UUID | None = None,
+    scope: str | None = None,
 ) -> list[MarketplaceItem]:
     query = select(MarketplaceItem)
 
@@ -27,6 +29,16 @@ async def list_marketplace_items(
             or_(
                 MarketplaceItem.name.ilike(pattern),
                 MarketplaceItem.description.ilike(pattern),
+            )
+        )
+
+    if scope == "mine" and created_by_id:
+        query = query.where(MarketplaceItem.created_by_id == created_by_id)
+    elif scope == "community":
+        query = query.where(
+            or_(
+                MarketplaceItem.is_builtin == True,  # noqa: E712
+                MarketplaceItem.status == "approved",
             )
         )
 
@@ -191,6 +203,19 @@ def resolve_command_prompt(item: MarketplaceItem, file_name: str | None = None) 
     return prompt
 
 
+async def submit_to_marketplace(
+    db: AsyncSession,
+    item_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> MarketplaceItem | None:
+    item = await get_marketplace_item(db, item_id)
+    if item is None or item.created_by_id != user_id or item.is_builtin:
+        return None
+    item.status = "submitted"
+    await db.flush()
+    return item
+
+
 async def create_marketplace_item(
     db: AsyncSession,
     item_type: str,
@@ -211,6 +236,7 @@ async def create_marketplace_item(
         category=category,
         content=content,
         is_builtin=False,
+        status="draft",
         created_by_id=created_by_id,
     )
     db.add(item)

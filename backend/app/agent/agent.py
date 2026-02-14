@@ -60,20 +60,30 @@ class PlainerAgent:
             for a in app_types
         ) if app_types else "(none)"
 
-        # Build marketplace commands listing
+        # Build marketplace commands listing (community)
         commands = await marketplace_service.list_marketplace_items(
-            self.db, item_type="command"
+            self.db, item_type="command", scope="community"
         )
         cmd_listing = "\n".join(
             f"  - {c.name}: {c.description}"
             for c in commands
         ) if commands else "(none)"
 
+        # Build user's custom commands
+        user_commands = await marketplace_service.list_marketplace_items(
+            self.db, item_type="command", created_by_id=self.owner_id, scope="mine"
+        )
+        user_cmd_listing = "\n".join(
+            f"  - {c.name}: {c.description}"
+            for c in user_commands
+        ) if user_commands else "(none)"
+
         return SYSTEM_PROMPT.format(
             workspace_name=self.workspace_name,
             file_listing=listing,
             app_types=app_listing,
             marketplace_commands=cmd_listing,
+            user_commands=user_cmd_listing,
         )
 
     async def _ws_send(self, event_type: str, payload: dict):

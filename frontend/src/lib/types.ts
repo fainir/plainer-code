@@ -107,6 +107,8 @@ export interface MarketplaceItem {
   is_featured: boolean;
   install_count: number;
   sort_order: number;
+  status: 'draft' | 'submitted' | 'approved';
+  created_by_id: string | null;
   created_at: string;
 }
 

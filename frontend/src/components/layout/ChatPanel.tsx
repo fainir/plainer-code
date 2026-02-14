@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listConversations, createConversation, listMessages } from '../../api/drive';
-import { listMarketplaceItems } from '../../api/marketplace';
+import { listMarketplaceItems, listMyMarketplaceItems } from '../../api/marketplace';
 import { useChatStore } from '../../stores/chatStore';
 import type { ToolCallInfo } from '../../stores/chatStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -9,12 +9,13 @@ import { useAuthStore } from '../../stores/authStore';
 import type { ChatMessage } from '../../lib/types';
 import {
   Send, X, Sparkles, Loader2, Bot, User, Key, WifiOff, Check, FileText,
-  Square, Paperclip, MessageSquare, ChevronLeft, XCircle,
+  Square, Paperclip, MessageSquare, ChevronLeft, XCircle, Plus,
   FileSearch, FilePlus, BarChart3, Code, Lightbulb, ClipboardList,
   RefreshCw, BookOpen, Zap, KanbanSquare, TestTube2, MessageCircle,
 } from 'lucide-react';
 import ApiKeyDialog from '../ApiKeyDialog';
 import MarketplaceModal from '../marketplace/MarketplaceModal';
+import CreateCommandModal from '../marketplace/CreateCommandModal';
 
 interface Attachment {
   type: 'image';
@@ -37,6 +38,7 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
   const [showApiKey, setShowApiKey] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showCreateCommand, setShowCreateCommand] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -363,6 +365,7 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
             {messages.length === 0 && !isAgentTyping && (
               <CommandCards
                 onMoreCommands={() => setShowMarketplace(true)}
+                onAddCustomCommand={() => setShowCreateCommand(true)}
                 onSelectCommand={(prompt) => {
                   setInput('');
                   addMessage({
@@ -500,6 +503,10 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
         onClose={() => setShowMarketplace(false)}
         initialTab="command"
       />
+      <CreateCommandModal
+        open={showCreateCommand}
+        onClose={() => setShowCreateCommand(false)}
+      />
     </div>
   );
 }
@@ -550,30 +557,32 @@ function DynamicIcon({ name, size = 16, className }: { name: string; size?: numb
   return <Icon size={size} className={className} />;
 }
 
-function CommandCards({ onSelectCommand, onMoreCommands }: { onSelectCommand: (prompt: string) => void; onMoreCommands?: () => void }) {
-  const { data: commands } = useQuery({
+function CommandCards({
+  onSelectCommand,
+  onMoreCommands,
+  onAddCustomCommand,
+}: {
+  onSelectCommand: (prompt: string) => void;
+  onMoreCommands?: () => void;
+  onAddCustomCommand?: () => void;
+}) {
+  const { data: communityCommands } = useQuery({
     queryKey: ['marketplace', 'command'],
     queryFn: () => listMarketplaceItems({ item_type: 'command' }),
   });
 
-  // Parse content to check requires_file
-  const noFileCommands = (commands || []).filter((cmd) => {
-    try {
-      const c = JSON.parse(cmd.content || '{}');
-      return !c.requires_file;
-    } catch {
-      return true;
-    }
+  const { data: myCommands } = useQuery({
+    queryKey: ['marketplace-mine', 'command'],
+    queryFn: () => listMyMarketplaceItems({ item_type: 'command' }),
   });
 
-  const fileCommands = (commands || []).filter((cmd) => {
-    try {
-      const c = JSON.parse(cmd.content || '{}');
-      return c.requires_file;
-    } catch {
-      return false;
-    }
+  const noFileCommands = (communityCommands || []).filter((cmd) => {
+    try { return !JSON.parse(cmd.content || '{}').requires_file; } catch { return true; }
   });
+
+  function getPrompt(cmd: { content: string | null }) {
+    try { return JSON.parse(cmd.content || '{}').prompt || ''; } catch { return ''; }
+  }
 
   return (
     <div className="py-6 px-2">
@@ -581,61 +590,69 @@ function CommandCards({ onSelectCommand, onMoreCommands }: { onSelectCommand: (p
         <Sparkles size={28} className="mx-auto text-indigo-400 mb-2" />
         <p className="text-sm text-gray-500">What would you like to do?</p>
       </div>
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {noFileCommands.slice(0, 6).map((cmd) => {
-          let prompt = '';
-          try {
-            prompt = JSON.parse(cmd.content || '{}').prompt || '';
-          } catch { /* skip */ }
-          return (
-            <button
-              key={cmd.id}
-              type="button"
-              onClick={() => onSelectCommand(prompt)}
-              className="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left group"
-            >
-              <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-200 transition">
-                <DynamicIcon name={cmd.icon} size={14} className="text-indigo-600" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-gray-800 leading-tight">{cmd.name}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{cmd.description}</div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      {fileCommands.length > 0 && (
+
+      {/* My Commands */}
+      {myCommands && myCommands.length > 0 && (
         <>
           <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-2 px-1">
-            With a file selected
+            My Commands
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {fileCommands.slice(0, 6).map((cmd) => {
-              let prompt = '';
-              try {
-                prompt = JSON.parse(cmd.content || '{}').prompt || '';
-              } catch { /* skip */ }
-              return (
-                <button
-                  key={cmd.id}
-                  type="button"
-                  onClick={() => onSelectCommand(prompt)}
-                  className="flex items-start gap-2.5 p-3 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition text-left group"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-gray-200 transition">
-                    <DynamicIcon name={cmd.icon} size={14} className="text-gray-500" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium text-gray-700 leading-tight">{cmd.name}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{cmd.description}</div>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {myCommands.map((cmd) => (
+              <button
+                key={cmd.id}
+                type="button"
+                onClick={() => onSelectCommand(getPrompt(cmd))}
+                className="flex items-start gap-2.5 p-3 rounded-xl border border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-200 transition">
+                  <DynamicIcon name={cmd.icon} size={14} className="text-indigo-600" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-gray-800 leading-tight">{cmd.name}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{cmd.description}</div>
+                </div>
+              </button>
+            ))}
           </div>
         </>
       )}
+
+      {/* Add custom command */}
+      {onAddCustomCommand && (
+        <button
+          type="button"
+          onClick={onAddCustomCommand}
+          className="w-full flex items-center justify-center gap-1.5 py-2 mb-4 text-xs text-indigo-500 hover:text-indigo-700 border border-dashed border-indigo-200 hover:border-indigo-300 rounded-xl transition"
+        >
+          <Plus size={12} />
+          Add custom command
+        </button>
+      )}
+
+      {/* Community Commands */}
+      <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-2 px-1">
+        Community Commands
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {noFileCommands.slice(0, 6).map((cmd) => (
+          <button
+            key={cmd.id}
+            type="button"
+            onClick={() => onSelectCommand(getPrompt(cmd))}
+            className="flex items-start gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left group"
+          >
+            <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-200 transition">
+              <DynamicIcon name={cmd.icon} size={14} className="text-indigo-600" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-gray-800 leading-tight">{cmd.name}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{cmd.description}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
       {onMoreCommands && (
         <button
           type="button"

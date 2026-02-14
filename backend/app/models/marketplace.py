@@ -20,6 +20,7 @@ class MarketplaceItem(UUIDMixin, TimestampMixin, Base):
     category: Mapped[str] = mapped_column(String(50), nullable=False, default="general")
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_builtin: Mapped[bool] = mapped_column(Boolean, default=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

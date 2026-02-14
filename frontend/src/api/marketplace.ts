@@ -23,6 +23,13 @@ export async function useMarketplaceItem(
   return res.data as MarketplaceUseResponse;
 }
 
+export async function listMyMarketplaceItems(params?: {
+  item_type?: string;
+}) {
+  const res = await api.get('/marketplace/mine', { params });
+  return res.data as MarketplaceItem[];
+}
+
 export async function createMarketplaceItem(data: {
   item_type: string;
   slug: string;
@@ -33,5 +40,10 @@ export async function createMarketplaceItem(data: {
   content?: string;
 }) {
   const res = await api.post('/marketplace', data);
+  return res.data as MarketplaceItem;
+}
+
+export async function submitToMarketplace(itemId: string) {
+  const res = await api.post(`/marketplace/${itemId}/submit`);
   return res.data as MarketplaceItem;
 }

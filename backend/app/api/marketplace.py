@@ -27,9 +27,22 @@ async def list_items(
     search: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    """List marketplace items. No auth required for browsing."""
+    """List community marketplace items. No auth required."""
     return await marketplace_service.list_marketplace_items(
-        db, item_type=item_type, category=category, search=search
+        db, item_type=item_type, category=category, search=search,
+        scope="community",
+    )
+
+
+@router.get("/mine", response_model=list[MarketplaceItemResponse])
+async def list_my_items(
+    item_type: str | None = None,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List current user's custom items."""
+    return await marketplace_service.list_marketplace_items(
+        db, item_type=item_type, created_by_id=user.id, scope="mine",
     )
 
 
@@ -103,6 +116,23 @@ async def use_item(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=f"Unknown item type: {item.item_type}",
     )
+
+
+@router.post("/{item_id}/submit", response_model=MarketplaceItemDetail)
+async def submit_item(
+    item_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Submit a user-created item for marketplace review."""
+    item = await marketplace_service.submit_to_marketplace(db, item_id, user.id)
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found or you cannot submit it",
+        )
+    await db.commit()
+    return item
 
 
 @router.post("", response_model=MarketplaceItemDetail, status_code=status.HTTP_201_CREATED)

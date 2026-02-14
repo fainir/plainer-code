@@ -16,6 +16,8 @@ class MarketplaceItemResponse(BaseModel):
     is_featured: bool
     install_count: int
     sort_order: int
+    status: str
+    created_by_id: uuid.UUID | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -23,7 +25,6 @@ class MarketplaceItemResponse(BaseModel):
 
 class MarketplaceItemDetail(MarketplaceItemResponse):
     content: str | None = None
-    created_by_id: uuid.UUID | None = None
 
 
 class MarketplaceItemCreate(BaseModel):

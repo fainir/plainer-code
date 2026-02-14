@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile } from '../../api/drive';
+import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance } from '../../api/drive';
 import DocxViewer from './DocxViewer';
 import { useDriveStore } from '../../stores/driveStore';
 import { useChatStore } from '../../stores/chatStore';
@@ -414,17 +414,46 @@ function appTypeToIcon(slug: string | null, size: number = 14) {
   }
 }
 
+const VIEWS_FOR_TYPE: Record<string, { slug: string; label: string }[]> = {
+  spreadsheet: [
+    { slug: 'table', label: 'Table' },
+    { slug: 'board', label: 'Board' },
+    { slug: 'calendar', label: 'Calendar' },
+  ],
+  document: [
+    { slug: 'document', label: 'Document' },
+    { slug: 'text-editor', label: 'Editor' },
+  ],
+  code: [
+    { slug: 'text-editor', label: 'Editor' },
+  ],
+};
+
 function InstanceTabBar({
   instances,
   activeInstanceId,
   onSelectInstance,
   onCreateCustom,
+  onAddView,
+  existingSlugs,
+  fileType,
+  isAddingView,
 }: {
   instances: FileItem[];
   activeInstanceId: string | null;
   onSelectInstance: (instanceId: string) => void;
   onCreateCustom: () => void;
+  onAddView: (slug: string) => void;
+  existingSlugs: string[];
+  fileType: string;
+  isAddingView: boolean;
 }) {
+  const [showAddMenu, setShowAddMenu] = useState(false);
+
+  const availableViews = (VIEWS_FOR_TYPE[fileType] || []).filter(
+    (v) => !existingSlugs.includes(v.slug)
+  );
+
   return (
     <div className="flex items-center gap-0.5 px-4 py-1.5 shrink-0">
       {instances.map((inst) => {
@@ -455,6 +484,35 @@ function InstanceTabBar({
         <Sparkles size={13} />
         <span className="text-[11px]">Custom</span>
       </button>
+
+      {availableViews.length > 0 && (
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowAddMenu(!showAddMenu)}
+            disabled={isAddingView}
+            className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap text-gray-400 hover:text-gray-600 hover:bg-gray-100/60 border border-transparent"
+            title="Add view"
+          >
+            <Plus size={14} />
+          </button>
+          {showAddMenu && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 min-w-[140px]">
+              {availableViews.map((v) => (
+                <button
+                  key={v.slug}
+                  type="button"
+                  onClick={() => { onAddView(v.slug); setShowAddMenu(false); }}
+                  className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+                >
+                  {appTypeToIcon(v.slug)}
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -503,6 +561,17 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
       queryClient.invalidateQueries({ queryKey: ['favorite-files'] });
       queryClient.invalidateQueries({ queryKey: ['shared-files'] });
+    },
+  });
+
+  const addViewMutation = useMutation({
+    mutationFn: (slug: string) => createInstance({
+      source_file_id: instancesForFileId!,
+      app_type_slug: slug,
+    }),
+    onSuccess: (newInst) => {
+      queryClient.invalidateQueries({ queryKey: ['file-instances', instancesForFileId] });
+      selectFile(newInst.id, newInst.name, 'instance');
     },
   });
 
@@ -688,6 +757,10 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
             activeInstanceId={isInstance ? fileId : null}
             onSelectInstance={handleSelectInstance}
             onCreateCustom={handleCreateCustom}
+            onAddView={(slug) => addViewMutation.mutate(slug)}
+            existingSlugs={(siblingInstances || []).map((i) => i.app_type_slug).filter(Boolean) as string[]}
+            fileType={detectedType}
+            isAddingView={addViewMutation.isPending}
           />
         </div>
       )}

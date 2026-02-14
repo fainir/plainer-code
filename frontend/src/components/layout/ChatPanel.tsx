@@ -408,9 +408,15 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
                     <ToolProgress tools={toolHistory} />
                   )}
                   {!streamingContent && toolHistory.length === 0 && (
-                    <div className="flex items-center gap-2 text-gray-400 text-sm py-1">
-                      <Loader2 size={14} className="animate-spin" />
-                      Thinking...
+                    <div className="bg-gray-50 rounded-xl px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-1">
+                          <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
+                          <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                          <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                        </div>
+                        <span className="text-sm text-gray-500">Claude is thinking...</span>
+                      </div>
                     </div>
                   )}
                 </div>

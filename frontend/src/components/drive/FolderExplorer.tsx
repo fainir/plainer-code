@@ -367,7 +367,8 @@ function AppsSection() {
     queryFn: () => listAppTypes(),
   });
 
-  const builtinApps = appTypes?.filter((a) => BUILTIN_SLUGS.includes(a.slug)) || [];
+  const builtinApps = (appTypes?.filter((a) => BUILTIN_SLUGS.includes(a.slug)) || [])
+    .sort((a, b) => (a.slug === 'custom-view' ? -1 : b.slug === 'custom-view' ? 1 : 0));
 
   return (
     <CollapsibleSection
@@ -377,7 +378,7 @@ function AppsSection() {
     >
       {builtinApps.length > 0 ? (
         builtinApps.map((app) => (
-          <AppTypeNode key={app.id} slug={app.slug} label={app.label} />
+          <AppTypeNode key={app.id} slug={app.slug} label={app.slug === 'custom-view' ? 'Custom' : app.label} />
         ))
       ) : (
         <p className="px-3 py-2 text-xs text-gray-400 italic">

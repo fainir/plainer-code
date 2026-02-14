@@ -107,8 +107,8 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
       <div
         className={`group w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
           isActive
-            ? 'bg-indigo-50 text-indigo-700 font-medium'
-            : 'text-gray-700 hover:bg-gray-100'
+            ? 'bg-indigo-950/50 text-indigo-400 font-medium'
+            : 'text-gray-300 hover:bg-gray-800'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         role="button"
@@ -159,8 +159,8 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
                 onClick={() => selectFile(inst.id, inst.name, 'instance')}
                 className={`w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition ${
                   selectedFileId === inst.id
-                    ? 'bg-indigo-50 text-indigo-700 font-medium'
-                    : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50'
+                    ? 'bg-indigo-950/50 text-indigo-400 font-medium'
+                    : 'text-gray-500 hover:text-indigo-400 hover:bg-indigo-950/30'
                 }`}
                 style={{ paddingLeft: `${depth * 16 + 42}px` }}
               >
@@ -219,8 +219,8 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
         }}
         className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
           isActive
-            ? 'bg-indigo-50 text-indigo-700 font-medium'
-            : 'text-gray-700 hover:bg-gray-100'
+            ? 'bg-indigo-950/50 text-indigo-400 font-medium'
+            : 'text-gray-300 hover:bg-gray-800'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
@@ -230,7 +230,7 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
             e.stopPropagation();
             setExpanded(!expanded);
           }}
-          className="p-0.5 hover:bg-gray-200 rounded shrink-0"
+          className="p-0.5 hover:bg-gray-700 rounded shrink-0"
           title={expanded ? 'Collapse' : 'Expand'}
         >
           {expanded ? (
@@ -283,13 +283,13 @@ function CollapsibleSection({
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-300 transition"
         >
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           {icon}
           <span>{label}</span>
           {count !== undefined && count > 0 && (
-            <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal normal-case">
+            <span className="text-[10px] bg-gray-800 text-gray-400 rounded-full px-1.5 py-0.5 font-normal normal-case">
               {count}
             </span>
           )}
@@ -298,7 +298,7 @@ function CollapsibleSection({
           <button
             type="button"
             onClick={onAction}
-            className="px-2 py-1 text-gray-400 hover:text-indigo-600 transition"
+            className="px-2 py-1 text-gray-400 hover:text-indigo-400 transition"
             title={actionTitle || 'Add'}
           >
             <Plus size={12} />
@@ -338,17 +338,17 @@ function AddDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="px-2 py-1 text-gray-400 hover:text-indigo-600 transition"
+        className="px-2 py-1 text-gray-400 hover:text-indigo-400 transition"
         title="Add"
       >
         <Plus size={12} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
+        <div className="absolute right-0 top-full mt-1 z-20 bg-gray-900 border border-gray-700 rounded-lg shadow-lg py-1 min-w-[140px]">
           <button
             type="button"
             onClick={() => { onUpload(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition"
           >
             <Upload size={12} className="text-gray-400" /> Upload
           </button>
@@ -356,7 +356,7 @@ function AddDropdown({
             <button
               type="button"
               onClick={() => { onTemplates(); setOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition"
             >
               <FileText size={12} className="text-gray-400" /> From templates
             </button>
@@ -385,7 +385,7 @@ function AppTypeNode({ slug, label }: { slug: string; label: string }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-1.5 py-1 px-2 text-sm text-gray-600 rounded hover:bg-gray-100 transition"
+        className="w-full flex items-center gap-1.5 py-1 px-2 text-sm text-gray-400 rounded hover:bg-gray-800 transition"
       >
         <span className={`transition ${expanded ? 'text-gray-500' : 'text-gray-300'}`}>
           {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
@@ -407,8 +407,8 @@ function AppTypeNode({ slug, label }: { slug: string; label: string }) {
                 onClick={() => selectFile(inst.id, inst.name, 'instance')}
                 className={`w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition ${
                   selectedFileId === inst.id
-                    ? 'bg-indigo-50 text-indigo-700 font-medium'
-                    : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50/50'
+                    ? 'bg-indigo-950/50 text-indigo-400 font-medium'
+                    : 'text-gray-500 hover:text-indigo-400 hover:bg-indigo-950/30'
                 }`}
                 style={{ paddingLeft: '42px' }}
               >
@@ -450,24 +450,24 @@ function AppAddDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+        className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-400 rounded hover:bg-gray-800 transition"
       >
         <Plus size={11} />
         <span>New App</span>
       </button>
       {open && (
-        <div className="absolute left-0 bottom-full mb-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+        <div className="absolute left-0 bottom-full mb-1 z-20 bg-gray-900 border border-gray-700 rounded-lg shadow-lg py-1 min-w-[160px]">
           <button
             type="button"
             onClick={() => { onCreateCustom(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition"
           >
             <Sparkles size={12} className="text-indigo-400" /> Create with AI
           </button>
           <button
             type="button"
             onClick={() => { onFromMarketplace(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 transition"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-800 transition"
           >
             <Package size={12} className="text-gray-400" /> From marketplace
           </button>
@@ -550,7 +550,7 @@ function FavoritesSection() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') navigateToFolder(folder.id, folder.name);
               }}
-              className="w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer text-gray-700 hover:bg-gray-100"
+              className="w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer text-gray-300 hover:bg-gray-800"
               style={{ paddingLeft: '8px' }}
             >
               <FolderIcon size={14} className="text-amber-500 shrink-0" />
@@ -571,8 +571,8 @@ function FavoritesSection() {
                 }}
                 className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-50 text-indigo-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-indigo-950/50 text-indigo-400 font-medium'
+                    : 'text-gray-300 hover:bg-gray-800'
                 }`}
                 style={{ paddingLeft: '8px' }}
               >
@@ -667,7 +667,7 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
               setOpen(false);
             }
           }}
-          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-300 transition"
         >
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           <Lock size={10} />
@@ -694,7 +694,7 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
           <button
             type="button"
             onClick={handleNewFile}
-            className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+            className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-400 rounded hover:bg-gray-800 transition"
           >
             <Plus size={11} />
             <span>New</span>
@@ -753,13 +753,13 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition"
+          className="flex-1 flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-300 transition"
         >
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           <Globe size={10} />
           <span>Shared Files</span>
           {visibleFiles.length > 0 && (
-            <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-normal normal-case">
+            <span className="text-[10px] bg-gray-800 text-gray-400 rounded-full px-1.5 py-0.5 font-normal normal-case">
               {visibleFiles.length}
             </span>
           )}
@@ -788,7 +788,7 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
           <button
             type="button"
             onClick={handleNewFile}
-            className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-50 transition"
+            className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-400 rounded hover:bg-gray-800 transition"
           >
             <Plus size={11} />
             <span>New</span>
@@ -806,10 +806,10 @@ export default function FolderExplorer() {
   const { currentFolderId } = useDriveStore();
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-gray-950">
       {/* App header */}
-      <div className="px-4 py-3 border-b border-gray-100">
-        <h1 className="text-base font-bold text-gray-900">Plainer</h1>
+      <div className="px-4 py-3 border-b border-gray-800">
+        <h1 className="text-base font-bold text-white">Plainer</h1>
       </div>
 
       {/* Navigation sections */}
@@ -838,13 +838,13 @@ export default function FolderExplorer() {
       />
 
       {/* User */}
-      <div className="px-4 py-3 border-t border-gray-100">
+      <div className="px-4 py-3 border-t border-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-medium text-indigo-600 shrink-0">
+            <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-xs font-medium text-white shrink-0">
               {user?.display_name?.[0]?.toUpperCase() || '?'}
             </div>
-            <span className="text-sm text-gray-700 truncate">{user?.display_name}</span>
+            <span className="text-sm text-gray-300 truncate">{user?.display_name}</span>
           </div>
           <button
             type="button"
@@ -852,7 +852,7 @@ export default function FolderExplorer() {
               logout();
               navigate('/login');
             }}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-500 hover:text-gray-300"
             title="Sign out"
           >
             <LogOut size={14} />

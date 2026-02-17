@@ -1215,7 +1215,6 @@ _COMPANY_PLANNER_FILES = [
 
 
 # Extra views to create beyond the default (Table/Document + Text Editor).
-# Maps file name → list of app type slugs.
 _PERSONAL_EXTRA_VIEWS: dict[str, list[str]] = {
     "weekly-plan.csv": ["board", "calendar"],
     "habits.csv": ["app-habit-tracker"],
@@ -1238,6 +1237,13 @@ _COMPANY_EXTRA_VIEWS: dict[str, list[str]] = {
 }
 
 
+# ── Custom HTML dashboards ────────────────────────────────
+
+_PERSONAL_DASHBOARD_HTML = '''<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 100%);padding:24px;color:#1e293b}h1{font-size:22px;font-weight:700;margin-bottom:4px}.subtitle{font-size:13px;color:#64748b;margin-bottom:24px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px}.card{background:white;border-radius:16px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0}.card h3{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:12px;font-weight:600}.stat{font-size:32px;font-weight:700;line-height:1}.stat-sm{font-size:14px;color:#64748b;margin-top:4px}.bar-wrap{margin-top:12px}.bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}.bar-label span:last-child{color:#64748b}.bar{height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden}.bar-fill{height:100%;border-radius:99px;transition:width 0.5s}.accent-blue{color:#3b82f6}.accent-green{color:#22c55e}.accent-purple{color:#8b5cf6}.accent-orange{color:#f59e0b}.accent-red{color:#ef4444}.fill-blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.fill-green{background:linear-gradient(90deg,#22c55e,#4ade80)}.fill-purple{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}.fill-orange{background:linear-gradient(90deg,#f59e0b,#fbbf24)}.habits-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}.habit-cell{width:100%;aspect-ratio:1;border-radius:4px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:600}.h-done{background:#dcfce7;color:#16a34a}.h-miss{background:#fef2f2;color:#ef4444}.h-head{background:transparent;color:#94a3b8;font-size:10px}.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;margin:2px}.tag-green{background:#dcfce7;color:#16a34a}.tag-blue{background:#dbeafe;color:#2563eb}.tag-yellow{background:#fef3c7;color:#d97706}.tag-red{background:#fef2f2;color:#ef4444}.wide{grid-column:span 2}@media(max-width:640px){.wide{grid-column:span 1}}</style></head><body><h1>Life Dashboard</h1><p class="subtitle">Personal goals, habits, fitness & finance at a glance</p><div class="grid"><div class="card"><h3>Fitness This Week</h3><div class="stat accent-blue">6 <span style="font-size:16px;font-weight:400">workouts</span></div><div class="stat-sm">32.4 hrs total · 3,390 cal burned</div><div class="bar-wrap"><div class="bar-label"><span>Weekly target</span><span>6/7 days</span></div><div class="bar"><div class="bar-fill fill-blue" style="width:86%"></div></div></div></div><div class="card"><h3>Financial Health</h3><div class="stat accent-green">$1,500</div><div class="stat-sm">Saved this month</div><div class="bar-wrap"><div class="bar-label"><span>Emergency fund</span><span>$7,200 / $10,000</span></div><div class="bar"><div class="bar-fill fill-green" style="width:72%"></div></div></div><div class="bar-wrap"><div class="bar-label"><span>Roth IRA</span><span>$3,000 / $6,000</span></div><div class="bar"><div class="bar-fill fill-green" style="width:50%"></div></div></div></div><div class="card"><h3>Reading Progress</h3><div class="stat accent-purple">5 <span style="font-size:16px;font-weight:400">of 24 books</span></div><div class="stat-sm">Currently reading 2 books</div><div class="bar-wrap"><div class="bar-label"><span>Annual goal</span><span>21%</span></div><div class="bar"><div class="bar-fill fill-purple" style="width:21%"></div></div></div><div style="margin-top:8px;font-size:12px;color:#64748b">📖 Thinking Fast and Slow · Four Thousand Weeks</div></div><div class="card"><h3>Key Goals (Q1 2026)</h3><div class="bar-wrap"><div class="bar-label"><span>🏃 Peak fitness</span><span>40%</span></div><div class="bar"><div class="bar-fill fill-blue" style="width:40%"></div></div></div><div class="bar-wrap"><div class="bar-label"><span>💰 Financial independence</span><span>46%</span></div><div class="bar"><div class="bar-fill fill-green" style="width:46%"></div></div></div><div class="bar-wrap"><div class="bar-label"><span>🚀 Career growth</span><span>56%</span></div><div class="bar"><div class="bar-fill fill-orange" style="width:56%"></div></div></div><div class="bar-wrap"><div class="bar-label"><span>🌱 Personal growth</span><span>26%</span></div><div class="bar"><div class="bar-fill fill-purple" style="width:26%"></div></div></div></div><div class="card wide"><h3>Habit Tracker — This Week</h3><div class="habits-grid"><div class="h-head">Habit</div><div class="h-head">M</div><div class="h-head">T</div><div class="h-head">W</div><div class="h-head">T</div><div class="h-head">F</div><div class="h-head">S/S</div><div style="font-size:11px;color:#334155">Wake 6am</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-miss">✗</div><div class="habit-cell h-done">✓</div><div style="font-size:11px;color:#334155">Exercise</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-miss">✗</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-miss">✗</div><div class="habit-cell h-done">✓</div><div style="font-size:11px;color:#334155">Meditate</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-miss">✗</div><div style="font-size:11px;color:#334155">Read 30p</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-miss">✗</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-miss">✗</div><div style="font-size:11px;color:#334155">Deep work</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-done">✓</div><div class="habit-cell h-miss">✗</div></div></div><div class="card"><h3>Projects</h3><div style="margin-bottom:8px"><div style="font-size:13px;font-weight:600">SaaS MVP - TaskFlow</div><div class="bar" style="margin-top:4px"><div class="bar-fill fill-blue" style="width:25%"></div></div><div style="font-size:11px;color:#64748b;margin-top:2px">25% · Due Apr 30</div></div><div style="margin-bottom:8px"><div style="font-size:13px;font-weight:600">Personal Website</div><div class="bar" style="margin-top:4px"><div class="bar-fill fill-purple" style="width:40%"></div></div><div style="font-size:11px;color:#64748b;margin-top:2px">40% · Due Mar 15</div></div><div><div style="font-size:13px;font-weight:600">Half Marathon</div><div class="bar" style="margin-top:4px"><div class="bar-fill fill-green" style="width:35%"></div></div><div style="font-size:11px;color:#64748b;margin-top:2px">35% · Week 6 of 16</div></div></div><div class="card"><h3>Weekly Schedule</h3><div style="font-size:12px;line-height:2"><span class="tag tag-blue">5 deep work</span> <span class="tag tag-green">6 workouts</span> <span class="tag tag-yellow">2 learning</span> <span class="tag tag-red">3 social</span></div><div style="margin-top:8px;font-size:11px;color:#64748b">Mon–Fri: 6am starts · 2hr focus blocks<br>Sat: Side project + photography<br>Sun: Long run + meal prep + plan week</div></div></div></body></html>'''
+
+_COMPANY_DASHBOARD_HTML = '''<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#f8fafc 0%,#eff6ff 100%);padding:24px;color:#1e293b}h1{font-size:22px;font-weight:700;margin-bottom:4px}.subtitle{font-size:13px;color:#64748b;margin-bottom:24px}.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}.kpi{background:white;border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0;text-align:center}.kpi .label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}.kpi .value{font-size:28px;font-weight:700;margin:4px 0}.kpi .delta{font-size:12px;font-weight:500}.up{color:#16a34a}.down{color:#ef4444}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}.card{background:white;border-radius:16px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0}.card h3{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:14px;font-weight:600}.bar-wrap{margin-bottom:10px}.bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}.bar{height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden}.bar-fill{height:100%;border-radius:99px}.fill-blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.fill-green{background:linear-gradient(90deg,#22c55e,#4ade80)}.fill-purple{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}.fill-orange{background:linear-gradient(90deg,#f59e0b,#fbbf24)}.fill-red{background:linear-gradient(90deg,#ef4444,#f87171)}.pipeline{display:flex;gap:8px;margin-top:8px}.pipe-stage{flex:1;text-align:center;padding:10px 4px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0}.pipe-stage .count{font-size:20px;font-weight:700;color:#1e293b}.pipe-stage .name{font-size:10px;color:#64748b;margin-top:2px}.team-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f8fafc}.team-row:last-child{border:none}.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:white;margin-right:10px;flex-shrink:0}.team-name{font-size:13px;font-weight:500;flex:1}.team-role{font-size:11px;color:#94a3b8}.sprint-item{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}.sprint-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}.dot-done{background:#22c55e}.dot-progress{background:#3b82f6}.dot-todo{background:#94a3b8}.chart-bar{display:flex;align-items:end;gap:6px;height:120px;margin-top:12px;padding-top:8px}.col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}.col-bar{width:100%;border-radius:6px 6px 0 0;min-height:4px}.col-label{font-size:10px;color:#94a3b8}.col-value{font-size:10px;font-weight:600;color:#334155}.wide{grid-column:span 2}@media(max-width:700px){.wide{grid-column:span 1}}</style></head><body><h1>Company Dashboard</h1><p class="subtitle">Acme Inc · Q1 2026 Overview</p><div class="kpi-row"><div class="kpi"><div class="label">MRR</div><div class="value" style="color:#2563eb">$4,200</div><div class="delta up">↑ 50% MoM</div></div><div class="kpi"><div class="label">Active Users</div><div class="value" style="color:#7c3aed">847</div><div class="delta up">↑ 37% MoM</div></div><div class="kpi"><div class="label">NPS Score</div><div class="value" style="color:#16a34a">48</div><div class="delta up">↑ 10 pts</div></div><div class="kpi"><div class="label">Weekly Signups</div><div class="value" style="color:#ea580c">95</div><div class="delta up">↑ 32%</div></div><div class="kpi"><div class="label">Runway</div><div class="value" style="color:#0891b2">14mo</div><div class="delta up">↑ 3mo</div></div></div><div class="grid"><div class="card"><h3>Sprint 2 Progress</h3><div class="sprint-item"><span class="sprint-dot dot-done"></span><span style="flex:1">Real-time collab engine</span><span style="font-size:12px;color:#64748b">80%</span></div><div class="sprint-item"><span class="sprint-dot dot-progress"></span><span style="flex:1">Dashboard + workspace UI</span><span style="font-size:12px;color:#64748b">60%</span></div><div class="sprint-item"><span class="sprint-dot dot-progress"></span><span style="flex:1">File upload + storage</span><span style="font-size:12px;color:#64748b">75%</span></div><div class="sprint-item"><span class="sprint-dot dot-progress"></span><span style="flex:1">E2E test suite</span><span style="font-size:12px;color:#64748b">40%</span></div><div class="sprint-item"><span class="sprint-dot dot-progress"></span><span style="flex:1">User onboarding flow</span><span style="font-size:12px;color:#64748b">55%</span></div><div class="sprint-item"><span class="sprint-dot dot-todo"></span><span style="flex:1">API docs + SDK</span><span style="font-size:12px;color:#64748b">30%</span></div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;font-size:12px;color:#64748b"><span>7 tasks in progress</span><span style="font-weight:600;color:#2563eb">Sprint ends Feb 14</span></div></div><div class="card"><h3>Sales Pipeline</h3><div class="pipeline"><div class="pipe-stage"><div class="count" style="color:#94a3b8">2</div><div class="name">Leads</div></div><div class="pipe-stage"><div class="count" style="color:#f59e0b">3</div><div class="name">Prospects</div></div><div class="pipe-stage"><div class="count" style="color:#3b82f6">2</div><div class="name">Trials</div></div><div class="pipe-stage"><div class="count" style="color:#22c55e">4</div><div class="name">Customers</div></div></div><div style="margin-top:14px;font-size:12px"><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f8fafc"><span style="font-weight:500">DataFlow Systems</span><span style="color:#2563eb;font-weight:600">$4,800/yr</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f8fafc"><span style="font-weight:500">TechCorp Inc</span><span style="color:#22c55e;font-weight:600">$2,400/yr</span></div><div style="display:flex;justify-content:space-between;padding:4px 0"><span style="font-weight:500">InnovateCo</span><span style="color:#f59e0b;font-weight:600">$1,200/yr</span></div></div></div><div class="card"><h3>OKR Progress · Q1 2026</h3><div class="bar-wrap"><div class="bar-label"><span>Ship v1.0</span><span>58%</span></div><div class="bar"><div class="bar-fill fill-blue" style="width:58%"></div></div></div><div class="bar-wrap"><div class="bar-label"><span>1000 beta users</span><span>45%</span></div><div class="bar"><div class="bar-fill fill-purple" style="width:45%"></div></div></div><div class="bar-wrap"><div class="bar-label"><span>Engineering culture</span><span>69%</span></div><div class="bar"><div class="bar-fill fill-green" style="width:69%"></div></div></div><div class="bar-wrap"><div class="bar-label"><span>Delight every user</span><span>58%</span></div><div class="bar"><div class="bar-fill fill-orange" style="width:58%"></div></div></div></div><div class="card"><h3>Revenue Growth</h3><div class="chart-bar"><div class="col"><div class="col-bar fill-blue" style="height:15%"></div><div class="col-value">$0.8K</div><div class="col-label">Sep</div></div><div class="col"><div class="col-bar fill-blue" style="height:22%"></div><div class="col-value">$1.2K</div><div class="col-label">Oct</div></div><div class="col"><div class="col-bar fill-blue" style="height:33%"></div><div class="col-value">$1.8K</div><div class="col-label">Nov</div></div><div class="col"><div class="col-bar fill-blue" style="height:50%"></div><div class="col-value">$2.8K</div><div class="col-label">Dec</div></div><div class="col"><div class="col-bar fill-blue" style="height:70%"></div><div class="col-value">$3.5K</div><div class="col-label">Jan</div></div><div class="col"><div class="col-bar" style="height:90%;background:linear-gradient(180deg,#3b82f6,#8b5cf6)"></div><div class="col-value" style="color:#2563eb">$4.2K</div><div class="col-label" style="font-weight:600">Feb</div></div></div></div><div class="card"><h3>Team (12 people)</h3><div class="team-row"><div class="avatar" style="background:#3b82f6">SC</div><div class="team-name">Sarah Chen</div><div class="team-role">CEO / Product Lead</div></div><div class="team-row"><div class="avatar" style="background:#8b5cf6">MJ</div><div class="team-name">Marcus Johnson</div><div class="team-role">CTO / Tech Lead</div></div><div class="team-row"><div class="avatar" style="background:#ec4899">ER</div><div class="team-name">Emily Rodriguez</div><div class="team-role">Senior Frontend</div></div><div class="team-row"><div class="avatar" style="background:#f59e0b">DK</div><div class="team-name">David Kim</div><div class="team-role">Senior Backend</div></div><div class="team-row"><div class="avatar" style="background:#22c55e">LP</div><div class="team-name">Lisa Park</div><div class="team-role">Head of Design</div></div><div style="text-align:center;font-size:12px;color:#94a3b8;padding-top:8px">+7 more team members</div></div><div class="card"><h3>Roadmap · Q1 2026</h3><div style="font-size:12px"><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="background:#dcfce7;color:#16a34a;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:600">SHIPPED</span><span>Auth + OAuth</span></div><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="background:#dcfce7;color:#16a34a;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:600">SHIPPED</span><span>Core Workspace</span></div><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="background:#dcfce7;color:#16a34a;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:600">SHIPPED</span><span>Design System v1</span></div><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="background:#dbeafe;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:600">IN PROGRESS</span><span>Real-time Collab</span></div><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="background:#dbeafe;color:#2563eb;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:600">IN PROGRESS</span><span>File Management</span></div><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="background:#f8fafc;color:#94a3b8;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:600">PLANNED</span><span>Notifications</span></div><div style="display:flex;gap:8px;align-items:center;padding:5px 0"><span style="background:#f8fafc;color:#94a3b8;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:600">PLANNED</span><span>RBAC + Permissions</span></div></div></div></div></body></html>'''
+
+
 async def seed_default_planner_content(
     db: AsyncSession,
     storage: StorageBackend,
@@ -1245,37 +1251,123 @@ async def seed_default_planner_content(
     owner_id: uuid.UUID,
     files_folder_id: uuid.UUID,
 ) -> None:
-    """Create Personal Planner and Company Planner with rich views.
+    """Create Personal & Company Planners with rich views — fast bulk insert.
 
-    Uses the same mechanism as marketplace folder templates
-    (create_file_from_content + auto_create_instances) plus additional
-    view types like Board, Calendar, Charts, CRM, etc.
+    Skips S3 writes (content_text is read first by get_file_content) and
+    FileVersion rows for speed. Single DB flush per planner.
     """
-    for planner_name, files_spec, extra_views in [
-        ("Personal Planner", _PERSONAL_PLANNER_FILES, _PERSONAL_EXTRA_VIEWS),
-        ("Company Planner", _COMPANY_PLANNER_FILES, _COMPANY_EXTRA_VIEWS),
+    # Pre-fetch all needed app types in a single query
+    needed = {
+        "table", "board", "calendar", "document", "text-editor",
+        "app-habit-tracker", "app-okr-tracker", "app-comparison",
+        "app-line-chart", "app-sprint-board", "app-form-view",
+        "app-roadmap", "app-kpi-dashboard", "app-crm", "app-retro-board",
+    }
+    result = await db.execute(
+        select(AppType).where(
+            AppType.slug.in_(needed),
+            or_(AppType.workspace_id.is_(None), AppType.workspace_id == workspace_id),
+        )
+    )
+    at_map: dict[str, AppType] = {}
+    for at in result.scalars().all():
+        if at.slug not in at_map:  # prefer global (NULL workspace) first
+            at_map[at.slug] = at
+
+    def _make_instance(
+        source: File, app_type: AppType, custom_content: str | None = None,
+    ) -> File:
+        base = source.name.rsplit(".", 1)[0] if "." in source.name else source.name
+        if app_type.renderer == "html-template":
+            inst_name = f"{base} {app_type.label}.html"
+            html = custom_content or app_type.template_content or "{}"
+            ct, mime, sz = html, "text/html", len(html.encode())
+        else:
+            inst_name = f"{base} {app_type.label}"
+            ct, mime, sz = None, "application/json", 2
+        return File(
+            owner_id=source.owner_id,
+            workspace_id=source.workspace_id,
+            folder_id=source.folder_id,
+            name=inst_name,
+            mime_type=mime,
+            size_bytes=sz,
+            storage_key=f"{workspace_id}/{uuid.uuid4()}/{inst_name}",
+            file_type="instance",
+            content_text=ct,
+            is_instance=True,
+            app_type_id=app_type.id,
+            source_file_id=source.id,
+            instance_config="{}",
+            created_by_id=source.created_by_id,
+        )
+
+    for planner_name, files_spec, extra_views, dashboard_html in [
+        ("Personal Planner", _PERSONAL_PLANNER_FILES, _PERSONAL_EXTRA_VIEWS, _PERSONAL_DASHBOARD_HTML),
+        ("Company Planner", _COMPANY_PLANNER_FILES, _COMPANY_EXTRA_VIEWS, _COMPANY_DASHBOARD_HTML),
     ]:
         folder = await create_folder(
             db, workspace_id, owner_id, planner_name, parent_id=files_folder_id,
         )
 
-        # Create files with default views (same as marketplace mechanism)
-        files_by_name: dict[str, File] = {}
-        for spec in files_spec:
-            file = await create_file_from_content(
-                db=db, storage=storage, workspace_id=workspace_id,
-                name=spec["name"], content=spec["content"],
-                owner_id=owner_id, folder_id=folder.id, created_by_id=owner_id,
-            )
-            await auto_create_instances_for_file(db, storage, file)
-            files_by_name[spec["name"]] = file
+        all_objects: list[File] = []
 
-        # Add extra views (Board, Calendar, Charts, CRM, etc.)
-        for filename, slugs in extra_views.items():
-            file = files_by_name.get(filename)
-            if not file:
-                continue
-            for slug in slugs:
-                app_type = await get_app_type_by_slug(db, slug, workspace_id)
-                if app_type:
-                    await create_instance(db, storage, file, app_type)
+        for spec in files_spec:
+            name = spec["name"]
+            content = spec["content"]
+            mime_type = detect_mime_type(name)
+            file_type = detect_file_type(mime_type, name)
+            content_bytes = content.encode("utf-8")
+
+            file = File(
+                owner_id=owner_id,
+                workspace_id=workspace_id,
+                folder_id=folder.id,
+                name=name,
+                mime_type=mime_type,
+                size_bytes=len(content_bytes),
+                storage_key=f"{workspace_id}/{uuid.uuid4()}/{name}",
+                file_type=file_type,
+                content_text=content,
+                created_by_id=owner_id,
+            )
+            all_objects.append(file)
+
+            # Default viewer instance (Table for CSV, Document for MD)
+            ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+            default_slug = (
+                "table" if ext in ("csv", "tsv") else
+                "document" if ext in ("md", "markdown") else None
+            )
+            if default_slug and default_slug in at_map:
+                all_objects.append(_make_instance(file, at_map[default_slug]))
+
+            # Text editor instance
+            if "text-editor" in at_map:
+                all_objects.append(_make_instance(file, at_map["text-editor"]))
+
+            # Extra rich views (Board, Calendar, Charts, etc.)
+            for slug in extra_views.get(name, []):
+                if slug in at_map:
+                    all_objects.append(_make_instance(file, at_map[slug]))
+
+        # Add dashboard HTML file
+        dashboard_name = "Dashboard.html"
+        dashboard_bytes = dashboard_html.encode("utf-8")
+        dashboard = File(
+            owner_id=owner_id,
+            workspace_id=workspace_id,
+            folder_id=folder.id,
+            name=dashboard_name,
+            mime_type="text/html",
+            size_bytes=len(dashboard_bytes),
+            storage_key=f"{workspace_id}/{uuid.uuid4()}/{dashboard_name}",
+            file_type="view",
+            content_text=dashboard_html,
+            created_by_id=owner_id,
+        )
+        all_objects.append(dashboard)
+
+        # Bulk insert — single DB flush, no S3 writes
+        db.add_all(all_objects)
+        await db.flush()

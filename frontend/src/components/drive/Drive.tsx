@@ -10,6 +10,7 @@ import type { FileItem, FolderItem } from '../../lib/types';
 import {
   FileCode,
   FileText,
+  FileSpreadsheet,
   Image,
   File as FileIcon,
   Folder as FolderIcon,
@@ -45,7 +46,7 @@ function fileIcon(fileType: string) {
     case 'image':
       return <Image size={20} className="text-purple-500" />;
     case 'spreadsheet':
-      return <Table size={20} className="text-green-600" />;
+      return <FileSpreadsheet size={20} className="text-green-600" />;
     case 'pdf':
       return <FileText size={20} className="text-red-500" />;
     case 'view':
@@ -958,7 +959,8 @@ export default function Drive() {
     e.target.value = '';
   };
 
-  const visibleFiles = files || [];
+  // text-editor is built-in edit mode, not a separate view file
+  const visibleFiles = (files || []).filter((f) => !(f.is_instance && f.app_type_slug === 'text-editor'));
 
   // File viewer mode (must be after all hooks)
   if (selectedFileId) {

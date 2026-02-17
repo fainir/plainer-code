@@ -26,6 +26,7 @@ import {
   LogOut,
   FileCode,
   FileText,
+  FileSpreadsheet,
   Image,
   File as FileIcon,
   Sparkles,
@@ -78,7 +79,7 @@ function treeFileIcon(fileType: string) {
     case 'image':
       return <Image size={14} className="text-purple-500 shrink-0" />;
     case 'spreadsheet':
-      return <Table size={14} className="text-green-600 shrink-0" />;
+      return <FileSpreadsheet size={14} className="text-green-600 shrink-0" />;
     case 'pdf':
       return <FileText size={14} className="text-red-500 shrink-0" />;
     case 'view':
@@ -118,7 +119,10 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
     return related;
   }, [file, expanded, siblingFiles]);
 
-  const expandedItems = file.is_instance ? relatedFiles : (instances || []);
+  // Filter out text-editor instances — editing is built into every file, not a separate view
+  const expandedItems = file.is_instance
+    ? relatedFiles
+    : (instances || []).filter((i) => i.app_type_slug !== 'text-editor');
   const hasItems = expanded && expandedItems.length > 0;
 
   return (
@@ -214,7 +218,8 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
     enabled: expanded,
   });
 
-  const allFiles = childFiles || [];
+  // text-editor is built-in edit mode, not a separate view file
+  const allFiles = (childFiles || []).filter((f) => !(f.is_instance && f.app_type_slug === 'text-editor'));
 
   return (
     <div>
@@ -650,7 +655,8 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
   const isSettingUp = !!filesFolderId && filesFiles?.length === 0 && filesFolders?.length === 0;
 
-  const visibleFiles = filesFiles || [];
+  // text-editor is built-in edit mode, not a separate view file
+  const visibleFiles = (filesFiles || []).filter((f) => !(f.is_instance && f.app_type_slug === 'text-editor'));
 
   async function handleNewFile() {
     if (!filesFolderId) return;

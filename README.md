@@ -163,14 +163,14 @@ railway link
 # Select: plainer-code → production
 ```
 
-**Deploy backend:**
+**Deploy backend** (must run from `backend/` directory):
 
 ```bash
 cd backend
 railway up --service backend-v2 --ci
 ```
 
-**Deploy frontend:**
+**Deploy frontend** (must run from `frontend/` directory):
 
 ```bash
 cd frontend
@@ -192,7 +192,7 @@ cd backend && railway up --service backend-v2 --detach && cd ../frontend && rail
 | `DATABASE_URL` | `postgresql://...(from Railway Postgres)` |
 | `REDIS_URL` | `redis://...(from Railway Redis)` |
 | `JWT_SECRET_KEY` | A random secret string |
-| `CORS_ORIGINS` | `["https://your-frontend.up.railway.app"]` |
+| `CORS_ORIGINS` | `["https://your-frontend.up.railway.app","https://plainer.app","https://www.plainer.app"]` |
 | `STORAGE_BACKEND` | `s3` |
 | `S3_BUCKET_NAME` | Your S3 bucket name |
 | `S3_ACCESS_KEY_ID` | Your AWS access key |

@@ -392,15 +392,23 @@ function AddDropdown({
 
 const BUILTIN_SLUGS = ['table', 'board', 'calendar', 'document', 'text-editor', 'custom-view'];
 
+const NON_CUSTOM_SLUGS = ['table', 'board', 'calendar', 'document', 'text-editor'];
+
 function AppTypeNode({ slug, label }: { slug: string; label: string }) {
   const [expanded, setExpanded] = useState(false);
   const { selectedFileId, selectFile } = useDriveStore();
 
-  const { data: instances } = useQuery({
-    queryKey: ['app-type-instances', slug],
-    queryFn: () => listInstancesByAppType(slug),
+  const isCustom = slug === 'custom-view';
+
+  const { data: rawInstances } = useQuery({
+    queryKey: ['app-type-instances', isCustom ? 'all-custom' : slug],
+    queryFn: () => isCustom ? listInstancesByAppType() : listInstancesByAppType(slug),
     enabled: expanded,
   });
+
+  const instances = isCustom
+    ? rawInstances?.filter((i) => !NON_CUSTOM_SLUGS.includes(i.app_type_slug || ''))
+    : rawInstances;
 
   return (
     <div>

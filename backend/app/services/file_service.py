@@ -1214,6 +1214,30 @@ _COMPANY_PLANNER_FILES = [
 
 
 
+# Extra views to create beyond the default (Table/Document + Text Editor).
+# Maps file name → list of app type slugs.
+_PERSONAL_EXTRA_VIEWS: dict[str, list[str]] = {
+    "weekly-plan.csv": ["board", "calendar"],
+    "habits.csv": ["app-habit-tracker"],
+    "goals.csv": ["app-okr-tracker"],
+    "budget.csv": ["app-comparison"],
+    "fitness.csv": ["calendar", "app-line-chart"],
+    "reading-list.csv": ["board"],
+    "projects.csv": ["board"],
+}
+
+_COMPANY_EXTRA_VIEWS: dict[str, list[str]] = {
+    "project-board.csv": ["board", "app-sprint-board"],
+    "team.csv": ["app-form-view"],
+    "okrs.csv": ["app-okr-tracker"],
+    "roadmap.csv": ["app-roadmap"],
+    "kpis.csv": ["app-kpi-dashboard", "app-line-chart"],
+    "clients.csv": ["app-crm"],
+    "budget.csv": ["app-line-chart"],
+    "retrospective.csv": ["app-retro-board"],
+}
+
+
 async def seed_default_planner_content(
     db: AsyncSession,
     storage: StorageBackend,
@@ -1221,17 +1245,37 @@ async def seed_default_planner_content(
     owner_id: uuid.UUID,
     files_folder_id: uuid.UUID,
 ) -> None:
-    """Create Personal Planner and Company Planner using the same mechanism
-    as marketplace folder templates (create_file_from_content + auto_create_instances)."""
-    from app.services.marketplace_service import _create_structure_recursive
+    """Create Personal Planner and Company Planner with rich views.
 
-    for planner_name, files_spec in [
-        ("Personal Planner", _PERSONAL_PLANNER_FILES),
-        ("Company Planner", _COMPANY_PLANNER_FILES),
+    Uses the same mechanism as marketplace folder templates
+    (create_file_from_content + auto_create_instances) plus additional
+    view types like Board, Calendar, Charts, CRM, etc.
+    """
+    for planner_name, files_spec, extra_views in [
+        ("Personal Planner", _PERSONAL_PLANNER_FILES, _PERSONAL_EXTRA_VIEWS),
+        ("Company Planner", _COMPANY_PLANNER_FILES, _COMPANY_EXTRA_VIEWS),
     ]:
-        folder = await create_folder(db, workspace_id, owner_id, planner_name, parent_id=files_folder_id)
-        structure = [
-            {"type": "file", "name": spec["name"], "content": spec["content"]}
-            for spec in files_spec
-        ]
-        await _create_structure_recursive(db, storage, workspace_id, owner_id, folder.id, structure)
+        folder = await create_folder(
+            db, workspace_id, owner_id, planner_name, parent_id=files_folder_id,
+        )
+
+        # Create files with default views (same as marketplace mechanism)
+        files_by_name: dict[str, File] = {}
+        for spec in files_spec:
+            file = await create_file_from_content(
+                db=db, storage=storage, workspace_id=workspace_id,
+                name=spec["name"], content=spec["content"],
+                owner_id=owner_id, folder_id=folder.id, created_by_id=owner_id,
+            )
+            await auto_create_instances_for_file(db, storage, file)
+            files_by_name[spec["name"]] = file
+
+        # Add extra views (Board, Calendar, Charts, CRM, etc.)
+        for filename, slugs in extra_views.items():
+            file = files_by_name.get(filename)
+            if not file:
+                continue
+            for slug in slugs:
+                app_type = await get_app_type_by_slug(db, slug, workspace_id)
+                if app_type:
+                    await create_instance(db, storage, file, app_type)

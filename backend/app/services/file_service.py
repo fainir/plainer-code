@@ -1297,38 +1297,75 @@ async def seed_default_planner_content(
     owner_id: uuid.UUID,
     files_folder_id: uuid.UUID,
 ) -> None:
-    """Create Personal Planner and Company Planner folders with example files and views."""
+    """Create Personal Planner and Company Planner folders with example files and views.
 
-    # Cache resolved app types to avoid repeated DB lookups
-    _app_cache: dict[str, "AppType | None"] = {}
+    Optimised for speed: skips S3 writes (content_text is read first by
+    get_file_content) and skips FileVersion rows for seed data.  All objects
+    are added to the session and flushed in bulk.
+    """
 
-    async def _get_app(slug: str) -> "AppType | None":
-        if slug not in _app_cache:
-            _app_cache[slug] = await get_app_type_by_slug(db, slug, workspace_id)
-        return _app_cache[slug]
+    # Pre-resolve the 2 built-in app types we need (table + document)
+    _app_cache: dict[str, AppType | None] = {}
+    for slug in ("table", "document"):
+        _app_cache[slug] = await get_app_type_by_slug(db, slug, workspace_id)
 
-    async def _create_planner(
-        parent_id: uuid.UUID,
-        name: str,
-        files_spec: list[dict],
-        views_spec: dict[str, list[str]],
-    ) -> None:
-        folder = await create_folder(db, workspace_id, owner_id, name, parent_id=parent_id)
+    def _make_file(folder_id: uuid.UUID, name: str, content: str) -> File:
+        mime = detect_mime_type(name)
+        return File(
+            owner_id=owner_id,
+            workspace_id=workspace_id,
+            folder_id=folder_id,
+            name=name,
+            mime_type=mime,
+            size_bytes=len(content.encode("utf-8")),
+            storage_key=f"{workspace_id}/seed/{uuid.uuid4()}/{name}",
+            file_type=detect_file_type(mime, name),
+            content_text=content,
+            is_vibe_file=False,
+            created_by_id=owner_id,
+            created_by_agent=False,
+        )
+
+    def _make_instance(source: File, app_type: AppType) -> File:
+        base = source.name.rsplit(".", 1)[0] if "." in source.name else source.name
+        inst_name = f"{base} {app_type.label}"
+        return File(
+            owner_id=owner_id,
+            workspace_id=workspace_id,
+            folder_id=source.folder_id,
+            name=inst_name,
+            mime_type="application/json",
+            size_bytes=2,
+            storage_key=f"{workspace_id}/seed/{uuid.uuid4()}/{inst_name}",
+            file_type="instance",
+            content_text=None,
+            is_instance=True,
+            app_type_id=app_type.id,
+            source_file_id=source.id,
+            instance_config="{}",
+            is_vibe_file=False,
+            created_by_id=owner_id,
+            created_by_agent=False,
+        )
+
+    for planner_name, files_spec, views_spec in [
+        ("Personal Planner", _PERSONAL_PLANNER_FILES, _PERSONAL_VIEWS),
+        ("Company Planner", _COMPANY_PLANNER_FILES, _COMPANY_VIEWS),
+    ]:
+        folder = await create_folder(db, workspace_id, owner_id, planner_name, parent_id=files_folder_id)
+
+        # Batch-create all data files (no S3, no FileVersion)
+        data_files: list[File] = []
         for spec in files_spec:
-            file = await create_file_from_content(
-                db, storage, workspace_id, spec["name"], spec["content"],
-                owner_id, folder_id=folder.id, created_by_id=owner_id,
-            )
-            for slug in views_spec.get(spec["name"], []):
-                app_type = await _get_app(slug)
-                if app_type:
-                    await create_instance(db, storage, file, app_type)
+            f = _make_file(folder.id, spec["name"], spec["content"])
+            db.add(f)
+            data_files.append(f)
+        await db.flush()  # single flush → all files get IDs
 
-    await _create_planner(
-        files_folder_id, "Personal Planner",
-        _PERSONAL_PLANNER_FILES, _PERSONAL_VIEWS,
-    )
-    await _create_planner(
-        files_folder_id, "Company Planner",
-        _COMPANY_PLANNER_FILES, _COMPANY_VIEWS,
-    )
+        # Batch-create all view instances
+        for f in data_files:
+            for slug in views_spec.get(f.name, []):
+                app_type = _app_cache.get(slug)
+                if app_type:
+                    db.add(_make_instance(f, app_type))
+        await db.flush()  # single flush → all instances created

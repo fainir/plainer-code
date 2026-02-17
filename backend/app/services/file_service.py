@@ -1256,36 +1256,56 @@ async def seed_default_planner_content(
     Skips S3 writes (content_text is read first by get_file_content) and
     FileVersion rows for speed. Single DB flush per planner.
     """
-    # Pre-fetch all needed app types in a single query
-    needed = {
-        "table", "board", "calendar", "document", "text-editor",
+    from app.models.marketplace import MarketplaceItem
+
+    # 1) Pre-fetch built-in app types
+    built_in = {"table", "board", "calendar", "document", "text-editor"}
+    result = await db.execute(
+        select(AppType).where(
+            AppType.slug.in_(built_in),
+            AppType.workspace_id.is_(None),
+        )
+    )
+    at_map: dict[str, AppType] = {at.slug: at for at in result.scalars().all()}
+
+    # 2) Auto-install marketplace app types needed for rich views
+    marketplace_slugs = {
         "app-habit-tracker", "app-okr-tracker", "app-comparison",
         "app-line-chart", "app-sprint-board", "app-form-view",
         "app-roadmap", "app-kpi-dashboard", "app-crm", "app-retro-board",
     }
-    result = await db.execute(
-        select(AppType).where(
-            AppType.slug.in_(needed),
-            or_(AppType.workspace_id.is_(None), AppType.workspace_id == workspace_id),
+    mp_result = await db.execute(
+        select(MarketplaceItem).where(
+            MarketplaceItem.slug.in_(marketplace_slugs),
+            MarketplaceItem.item_type == "app",
         )
     )
-    at_map: dict[str, AppType] = {}
-    for at in result.scalars().all():
-        if at.slug not in at_map:  # prefer global (NULL workspace) first
-            at_map[at.slug] = at
+    for item in mp_result.scalars().all():
+        app_type = AppType(
+            workspace_id=workspace_id,
+            slug=item.slug,
+            label=item.name,
+            icon=item.icon,
+            renderer="html-template",
+            template_content=item.content,
+            description=item.description,
+        )
+        db.add(app_type)
+        at_map[item.slug] = app_type
+    await db.flush()
 
-    def _make_instance(
-        source: File, app_type: AppType, custom_content: str | None = None,
-    ) -> File:
+    # Helper: create an instance File with explicit UUID
+    def _make_instance(source_id: uuid.UUID, source: File, app_type: AppType) -> File:
         base = source.name.rsplit(".", 1)[0] if "." in source.name else source.name
         if app_type.renderer == "html-template":
             inst_name = f"{base} {app_type.label}.html"
-            html = custom_content or app_type.template_content or "{}"
+            html = app_type.template_content or "{}"
             ct, mime, sz = html, "text/html", len(html.encode())
         else:
             inst_name = f"{base} {app_type.label}"
             ct, mime, sz = None, "application/json", 2
         return File(
+            id=uuid.uuid4(),
             owner_id=source.owner_id,
             workspace_id=source.workspace_id,
             folder_id=source.folder_id,
@@ -1297,7 +1317,7 @@ async def seed_default_planner_content(
             content_text=ct,
             is_instance=True,
             app_type_id=app_type.id,
-            source_file_id=source.id,
+            source_file_id=source_id,
             instance_config="{}",
             created_by_id=source.created_by_id,
         )
@@ -1319,7 +1339,10 @@ async def seed_default_planner_content(
             file_type = detect_file_type(mime_type, name)
             content_bytes = content.encode("utf-8")
 
+            # Explicit UUID so instances can reference it before flush
+            file_id = uuid.uuid4()
             file = File(
+                id=file_id,
                 owner_id=owner_id,
                 workspace_id=workspace_id,
                 folder_id=folder.id,
@@ -1340,21 +1363,22 @@ async def seed_default_planner_content(
                 "document" if ext in ("md", "markdown") else None
             )
             if default_slug and default_slug in at_map:
-                all_objects.append(_make_instance(file, at_map[default_slug]))
+                all_objects.append(_make_instance(file_id, file, at_map[default_slug]))
 
             # Text editor instance
             if "text-editor" in at_map:
-                all_objects.append(_make_instance(file, at_map["text-editor"]))
+                all_objects.append(_make_instance(file_id, file, at_map["text-editor"]))
 
-            # Extra rich views (Board, Calendar, Charts, etc.)
+            # Extra rich views (Board, Calendar, Charts, CRM, etc.)
             for slug in extra_views.get(name, []):
                 if slug in at_map:
-                    all_objects.append(_make_instance(file, at_map[slug]))
+                    all_objects.append(_make_instance(file_id, file, at_map[slug]))
 
         # Add dashboard HTML file
         dashboard_name = "Dashboard.html"
         dashboard_bytes = dashboard_html.encode("utf-8")
         dashboard = File(
+            id=uuid.uuid4(),
             owner_id=owner_id,
             workspace_id=workspace_id,
             folder_id=folder.id,

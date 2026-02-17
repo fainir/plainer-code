@@ -714,113 +714,234 @@ _PERSONAL_PLANNER_FILES = [
         "name": "weekly-plan.csv",
         "content": (
             "Day,Time Block,Task,Category,Priority,Status,Notes\n"
-            "Monday,Morning,Review weekly goals,Planning,High,Done,Set top 3 priorities\n"
-            "Monday,Morning,Exercise routine,Health,Medium,Done,30 min cardio\n"
-            "Monday,Afternoon,Deep work session,Work,High,In Progress,Focus on main project\n"
-            "Monday,Evening,Meal prep,Health,Medium,Todo,Prep lunches for the week\n"
-            "Tuesday,Morning,Team standup,Work,High,Todo,Sync with team\n"
-            "Tuesday,Morning,Read for 30 min,Learning,Low,Todo,Current book chapter\n"
-            "Tuesday,Afternoon,Project milestone,Work,High,Todo,Complete deliverable\n"
-            "Tuesday,Evening,Yoga class,Health,Medium,Todo,6pm session\n"
-            "Wednesday,Morning,Review finances,Finance,Medium,Todo,Check budget vs actuals\n"
-            "Wednesday,Afternoon,Creative work,Personal,Medium,Todo,Side project time\n"
-            "Wednesday,Evening,Dinner with friends,Social,Low,Todo,\n"
-            "Thursday,Morning,Exercise routine,Health,Medium,Todo,Strength training\n"
-            "Thursday,Afternoon,Deep work session,Work,High,Todo,\n"
-            "Thursday,Evening,Online course,Learning,Medium,Todo,Complete module 3\n"
-            "Friday,Morning,Weekly review,Planning,High,Todo,Review what worked\n"
-            "Friday,Afternoon,Admin tasks,Work,Low,Todo,Emails and scheduling\n"
-            "Friday,Evening,Date night,Social,Medium,Todo,\n"
-            "Saturday,Morning,Farmers market,Health,Low,Todo,Fresh groceries\n"
-            "Saturday,Afternoon,Hobby time,Personal,Medium,Todo,\n"
-            "Sunday,Morning,Journaling,Personal,Medium,Todo,Weekly reflection\n"
-            "Sunday,Afternoon,Plan next week,Planning,High,Todo,Set goals for Monday"
+            "Monday,06:00,Morning run + cold shower,Health,High,Done,5K route through park\n"
+            "Monday,08:00,Review weekly goals and priorities,Planning,High,Done,Set top 3 MITs\n"
+            "Monday,09:00,Deep work - main project,Work,High,Done,2-hour focus block\n"
+            "Monday,12:00,Healthy lunch + walk,Health,Medium,Done,Meal prepped Sunday\n"
+            "Monday,14:00,Client calls and emails,Work,Medium,Done,3 calls scheduled\n"
+            "Monday,17:00,Online course - Module 4,Learning,Medium,Done,React Native\n"
+            "Monday,19:00,Cook dinner + meal prep,Health,Medium,Done,Batch cook chicken\n"
+            "Tuesday,06:00,Gym - strength training,Health,High,Done,Upper body day\n"
+            "Tuesday,08:30,Team standup,Work,High,Done,Sprint sync\n"
+            "Tuesday,09:00,Deep work - feature build,Work,High,In Progress,Auth integration\n"
+            "Tuesday,12:00,Lunch meeting with mentor,Social,Medium,In Progress,Career advice\n"
+            "Tuesday,14:00,Code review + PR feedback,Work,Medium,Todo,Review 3 PRs\n"
+            "Tuesday,17:00,Read 30 pages,Learning,Low,Todo,Current: Psychology of Money\n"
+            "Tuesday,19:30,Yoga class,Health,Medium,Todo,Studio downtown\n"
+            "Wednesday,06:00,Morning run - intervals,Health,High,Todo,HIIT sprints\n"
+            "Wednesday,09:00,Deep work - side project,Personal,High,Todo,SaaS MVP\n"
+            "Wednesday,12:00,Review finances + budget,Finance,Medium,Todo,Weekly check-in\n"
+            "Wednesday,14:00,Creative writing,Personal,Low,Todo,Blog post draft\n"
+            "Wednesday,19:00,Dinner with friends,Social,Medium,Todo,New restaurant\n"
+            "Thursday,06:00,Gym - leg day,Health,High,Todo,Squats + deadlifts\n"
+            "Thursday,09:00,Deep work - main project,Work,High,Todo,Sprint deliverable\n"
+            "Thursday,14:00,1:1 with manager,Work,High,Todo,Growth discussion\n"
+            "Thursday,17:00,Online course - Module 5,Learning,Medium,Todo,React Native\n"
+            "Thursday,19:00,Meditate + journal,Personal,Medium,Todo,30 min session\n"
+            "Friday,08:00,Weekly review + retro,Planning,High,Todo,What worked this week\n"
+            "Friday,09:00,Wrap up open tasks,Work,High,Todo,Close sprint items\n"
+            "Friday,14:00,Side project - marketing,Personal,Medium,Todo,Landing page copy\n"
+            "Friday,18:00,Date night,Social,High,Todo,Reservations at 7\n"
+            "Saturday,08:00,Farmers market,Health,Low,Todo,Fresh produce\n"
+            "Saturday,10:00,Side project - coding,Personal,High,Todo,3-hour block\n"
+            "Saturday,14:00,Hobby - photography,Personal,Medium,Todo,Golden hour shoot\n"
+            "Saturday,19:00,Game night with friends,Social,Medium,Todo,Board games\n"
+            "Sunday,08:00,Long run - 10K,Health,High,Todo,Trail route\n"
+            "Sunday,11:00,Meal prep for the week,Health,Medium,Todo,5 lunches + 3 dinners\n"
+            "Sunday,14:00,Read + relax,Personal,Low,Todo,Finish current book\n"
+            "Sunday,17:00,Plan next week,Planning,High,Todo,Set priorities for Monday\n"
+            "Sunday,19:00,Journal + gratitude,Personal,Medium,Todo,Weekly reflection"
         ),
     },
     {
         "name": "habits.csv",
         "content": (
-            "Habit,Mon,Tue,Wed,Thu,Fri,Sat,Sun\n"
-            "Exercise 30 min,yes,yes,no,yes,no,yes,no\n"
-            "Read 20 pages,yes,yes,yes,no,yes,no,yes\n"
-            "Meditate,yes,no,yes,yes,yes,no,no\n"
-            "Drink 8 glasses water,yes,yes,yes,yes,no,yes,yes\n"
-            "No social media before noon,no,yes,yes,yes,yes,no,no\n"
-            "Journal before bed,yes,yes,no,yes,yes,no,yes\n"
-            "Cook healthy meal,yes,no,yes,no,yes,yes,yes\n"
-            "8 hours sleep,yes,yes,no,yes,yes,yes,yes"
+            "Habit,Category,Mon,Tue,Wed,Thu,Fri,Sat,Sun\n"
+            "Wake up by 6am,Health,yes,yes,yes,yes,no,yes,yes\n"
+            "Exercise 45 min,Health,yes,yes,no,yes,no,yes,yes\n"
+            "Meditate 15 min,Mindfulness,yes,yes,yes,yes,yes,no,yes\n"
+            "Read 30 pages,Learning,yes,yes,yes,no,yes,no,yes\n"
+            "Drink 3L water,Health,yes,yes,yes,yes,no,yes,yes\n"
+            "No phone first hour,Mindfulness,no,yes,yes,yes,yes,no,no\n"
+            "Journal before bed,Mindfulness,yes,yes,no,yes,yes,no,yes\n"
+            "Cook healthy meal,Health,yes,no,yes,no,yes,yes,yes\n"
+            "8 hours sleep,Health,yes,yes,no,yes,yes,yes,yes\n"
+            "Deep work 2+ hours,Productivity,yes,yes,yes,yes,yes,no,no\n"
+            "No social media until noon,Productivity,no,yes,yes,yes,yes,no,no\n"
+            "Gratitude practice,Mindfulness,yes,yes,yes,yes,yes,yes,yes\n"
+            "Walk 10000 steps,Health,yes,no,yes,yes,no,yes,yes\n"
+            "Stretch routine,Health,yes,yes,no,yes,no,yes,no\n"
+            "Practice language 15min,Learning,no,yes,no,yes,no,no,yes"
         ),
     },
     {
         "name": "goals.csv",
         "content": (
             "Objective,Key Result,Progress,Owner,Quarter,Status\n"
-            "Improve fitness,Run a 5K under 25 minutes,40,Me,Q1 2025,On Track\n"
-            "Improve fitness,Work out 4x per week consistently,60,Me,Q1 2025,On Track\n"
-            "Improve fitness,Lose 5 lbs body fat,30,Me,Q1 2025,Behind\n"
-            "Build financial health,Save $3000 emergency fund,70,Me,Q1 2025,On Track\n"
-            "Build financial health,Reduce dining out to $150/month,45,Me,Q1 2025,At Risk\n"
-            "Build financial health,Start investing $200/month,80,Me,Q1 2025,On Track\n"
-            "Learn new skills,Complete Python course,55,Me,Q1 2025,On Track\n"
-            "Learn new skills,Read 12 books this year,25,Me,Q1 2025,On Track\n"
-            "Learn new skills,Launch personal website,10,Me,Q1 2025,Behind"
+            "Peak physical fitness,Run a half-marathon under 1:50,35,Me,Q1 2026,On Track\n"
+            "Peak physical fitness,Hit 4 gym sessions per week for 12 weeks,65,Me,Q1 2026,On Track\n"
+            "Peak physical fitness,Reach 15% body fat,40,Me,Q1 2026,On Track\n"
+            "Peak physical fitness,Complete 30-day yoga challenge,20,Me,Q1 2026,Behind\n"
+            "Financial independence,Save $10K emergency fund,72,Me,Q1 2026,On Track\n"
+            "Financial independence,Max out Roth IRA contribution,50,Me,Q1 2026,On Track\n"
+            "Financial independence,Reduce expenses by 15%,38,Me,Q1 2026,At Risk\n"
+            "Financial independence,Generate $500/mo side income,25,Me,Q1 2026,Behind\n"
+            "Career growth,Get promoted to Senior,60,Me,Q1 2026,On Track\n"
+            "Career growth,Ship 3 major features,33,Me,Q1 2026,On Track\n"
+            "Career growth,Give 2 tech talks,50,Me,Q1 2026,On Track\n"
+            "Career growth,Mentor 1 junior developer,80,Me,Q1 2026,Ahead\n"
+            "Personal growth,Read 24 books this year,25,Me,Q1 2026,On Track\n"
+            "Personal growth,Launch personal SaaS project,15,Me,Q1 2026,Behind\n"
+            "Personal growth,Learn Spanish to B1 level,20,Me,Q1 2026,On Track\n"
+            "Personal growth,Build a writing habit - 2 posts/month,42,Me,Q1 2026,On Track"
         ),
     },
     {
         "name": "budget.csv",
         "content": (
             "Category,Item,Budgeted,Actual,Type\n"
-            "Income,Salary,5000,5000,income\n"
-            "Income,Freelance,800,650,income\n"
-            "Housing,Rent,1400,1400,expense\n"
-            "Housing,Utilities,180,165,expense\n"
-            "Housing,Internet,60,60,expense\n"
-            "Food,Groceries,350,380,expense\n"
-            "Food,Dining Out,150,210,expense\n"
-            "Food,Coffee,40,55,expense\n"
-            "Transport,Gas,120,105,expense\n"
-            "Transport,Car Insurance,90,90,expense\n"
-            "Health,Gym Membership,50,50,expense\n"
-            "Health,Supplements,30,25,expense\n"
+            "Income,Salary,7500,7500,income\n"
+            "Income,Freelance / Side Projects,1200,950,income\n"
+            "Income,Investments / Dividends,200,180,income\n"
+            "Housing,Rent / Mortgage,2100,2100,expense\n"
+            "Housing,Utilities (Electric + Gas),160,145,expense\n"
+            "Housing,Internet + Phone,95,95,expense\n"
+            "Housing,Renters Insurance,25,25,expense\n"
+            "Food,Groceries,400,430,expense\n"
+            "Food,Dining Out,200,275,expense\n"
+            "Food,Coffee + Snacks,50,68,expense\n"
+            "Transport,Gas / EV Charging,100,85,expense\n"
+            "Transport,Car Payment,350,350,expense\n"
+            "Transport,Insurance,120,120,expense\n"
+            "Health,Gym + Classes,80,80,expense\n"
+            "Health,Supplements,40,35,expense\n"
+            "Health,Health Insurance,180,180,expense\n"
             "Savings,Emergency Fund,500,500,savings\n"
-            "Savings,Investment,300,300,savings\n"
-            "Personal,Subscriptions,45,52,expense\n"
+            "Savings,Roth IRA,500,500,savings\n"
+            "Savings,Brokerage Account,300,300,savings\n"
+            "Savings,Vacation Fund,200,200,savings\n"
+            "Personal,Subscriptions (Spotify + Netflix + etc),55,62,expense\n"
             "Personal,Entertainment,100,85,expense\n"
-            "Personal,Clothing,75,0,expense"
+            "Personal,Clothing,100,45,expense\n"
+            "Personal,Education / Courses,75,99,expense\n"
+            "Personal,Gifts + Charity,100,60,expense"
+        ),
+    },
+    {
+        "name": "fitness.csv",
+        "content": (
+            "Date,Workout,Duration,Calories,Category,Mood,Notes\n"
+            "2026-02-03,Morning Run - 5K,32,380,Cardio,Great,New personal best pace\n"
+            "2026-02-04,Upper Body Strength,55,320,Strength,Good,Bench press PR: 185 lbs\n"
+            "2026-02-05,Yoga Flow,45,180,Flexibility,Great,Hip opener sequence\n"
+            "2026-02-06,Leg Day,50,400,Strength,Tough,Squat 5x5 at 225 lbs\n"
+            "2026-02-07,Rest Day,0,0,Rest,Good,Active recovery walk\n"
+            "2026-02-08,HIIT Intervals,30,350,Cardio,Great,Tabata sprints\n"
+            "2026-02-09,Long Run - 10K,52,620,Cardio,Good,Trail route with hills\n"
+            "2026-02-10,Push Day,50,310,Strength,Good,Shoulder press + triceps\n"
+            "2026-02-11,Swimming,40,300,Cardio,Great,1500m laps\n"
+            "2026-02-12,Pull Day,45,290,Strength,Good,Deadlift 3x5 at 275\n"
+            "2026-02-13,Yoga + Stretch,40,150,Flexibility,Great,Recovery focus\n"
+            "2026-02-14,Morning Run - 8K,42,520,Cardio,Great,Valentines run\n"
+            "2026-02-15,Full Body Circuit,55,450,Strength,Tough,6 station circuit"
         ),
     },
     {
         "name": "reading-list.csv",
         "content": (
             "Title,Author,Genre,Status,Rating,Start Date,End Date,Notes\n"
-            "Atomic Habits,James Clear,Self-Help,Read,5,2025-01-05,2025-01-18,Life-changing frameworks\n"
-            "Deep Work,Cal Newport,Productivity,Read,4,2025-01-20,2025-02-01,Great focus strategies\n"
-            "Thinking Fast and Slow,Daniel Kahneman,Psychology,Reading,,2025-02-03,,Dense but fascinating\n"
-            "The Psychology of Money,Morgan Housel,Finance,To Read,,,,Recommended by a friend\n"
-            "Project Hail Mary,Andy Weir,Sci-Fi,To Read,,,,Fun read after nonfiction\n"
-            "The Lean Startup,Eric Ries,Business,To Read,,,,For side project ideas\n"
-            "Educated,Tara Westover,Memoir,To Read,,,,Bestseller"
+            "Atomic Habits,James Clear,Self-Help,Read,5,2026-01-02,2026-01-12,Life-changing frameworks for building habits\n"
+            "Deep Work,Cal Newport,Productivity,Read,5,2026-01-13,2026-01-22,Transformed my focus routine\n"
+            "The Psychology of Money,Morgan Housel,Finance,Read,4,2026-01-23,2026-02-01,20 lessons on wealth and happiness\n"
+            "Thinking Fast and Slow,Daniel Kahneman,Psychology,Reading,,2026-02-02,,Dense but mind-blowing\n"
+            "Four Thousand Weeks,Oliver Burkeman,Philosophy,Reading,,2026-02-08,,Time management for mortals\n"
+            "The Almanack of Naval Ravikant,Eric Jorgenson,Business,To Read,,,,Wealth and happiness principles\n"
+            "Project Hail Mary,Andy Weir,Sci-Fi,To Read,,,,Fun read between nonfiction\n"
+            "Shoe Dog,Phil Knight,Memoir,To Read,,,,Nike origin story\n"
+            "The Lean Startup,Eric Ries,Business,To Read,,,,For my SaaS side project\n"
+            "Sapiens,Yuval Noah Harari,History,To Read,,,,Big picture perspective\n"
+            "Range,David Epstein,Science,To Read,,,,Why generalists triumph\n"
+            "Never Split the Difference,Chris Voss,Business,To Read,,,,Negotiation skills"
+        ),
+    },
+    {
+        "name": "projects.csv",
+        "content": (
+            "Project,Status,Priority,Category,Start Date,Due Date,Progress,Next Step\n"
+            "SaaS MVP - TaskFlow,In Progress,High,Software,2026-01-15,2026-04-30,25,Build authentication module\n"
+            "Personal Website Redesign,In Progress,Medium,Creative,2026-02-01,2026-03-15,40,Write 3 portfolio case studies\n"
+            "YouTube Channel Launch,Planning,Medium,Content,2026-03-01,2026-06-30,10,Script first 5 videos\n"
+            "Spanish B1 Certification,In Progress,Medium,Learning,2026-01-01,2026-06-30,20,Complete Duolingo Unit 15\n"
+            "Photography Portfolio,Todo,Low,Creative,,2026-05-30,5,Curate best 20 shots\n"
+            "Investment Research System,Planning,Medium,Finance,2026-02-15,2026-04-15,15,Define stock screening criteria\n"
+            "Half Marathon Training,In Progress,High,Health,2026-01-06,2026-05-18,35,Week 6 of 16-week plan\n"
+            "Home Automation Setup,Todo,Low,Tech,,2026-06-30,0,Research smart home platforms\n"
+            "Freelance Client Portal,Backlog,Medium,Software,,,,Design wireframes\n"
+            "Write Technical Blog Series,In Progress,Medium,Content,2026-01-20,,30,Draft post #3 on system design"
+        ),
+    },
+    {
+        "name": "journal.md",
+        "content": (
+            "# Life Journal\n\n"
+            "## February 15, 2026\n\n"
+            "Great week overall. Hit a new bench press PR and stayed consistent with morning runs. "
+            "The SaaS project is coming along - auth module is almost done. Need to focus more on "
+            "the Spanish practice though, fell behind this week.\n\n"
+            "**Wins this week:**\n"
+            "- Bench press PR: 185 lbs\n"
+            "- Shipped 2 PRs at work\n"
+            "- Finished The Psychology of Money\n"
+            "- Stayed under budget on dining out\n\n"
+            "**Areas to improve:**\n"
+            "- Missed 2 meditation sessions\n"
+            "- Phone screen time still too high\n"
+            "- Need to be more consistent with language learning\n\n"
+            "---\n\n"
+            "## February 8, 2026\n\n"
+            "Started the week strong with a 10K trail run on Sunday. The new route through the "
+            "nature reserve was amazing. Work is going well - the feature I've been building "
+            "got great feedback in code review.\n\n"
+            "**Reflection:** I'm happiest when I have a good balance of physical activity, deep work, "
+            "and social time. This week had all three. The key is protecting those morning hours "
+            "for exercise and deep work before the day gets chaotic.\n\n"
+            "**Goals check-in:**\n"
+            "- Fitness: On track. Half marathon training going well\n"
+            "- Finance: Saved $1,500 this month. Emergency fund growing\n"
+            "- Career: Promotion conversation went well. Q1 deliverables on track\n"
+            "- Personal: Need to dedicate more time to the SaaS project\n"
         ),
     },
     {
         "name": "notes.md",
         "content": (
-            "# Personal Planner Notes\n\n"
-            "## How to Use This Planner\n\n"
-            "Welcome to your personal planner! Here's what's inside:\n\n"
-            "- **Weekly Plan** - Your week at a glance with time blocks and priorities\n"
-            "- **Habits** - Track your daily habits and build streaks\n"
-            "- **Goals** - OKR-style goal tracking with progress\n"
-            "- **Budget** - Monthly income and expense tracker\n"
-            "- **Reading List** - Books you're reading and want to read\n\n"
-            "### Tips\n\n"
-            "1. Review your weekly plan every Sunday evening\n"
-            "2. Update habits daily - consistency matters more than perfection\n"
-            "3. Review goals monthly and adjust key results as needed\n"
-            "4. Track budget weekly to catch overspending early\n\n"
-            "### Quick Links\n\n"
-            "Each file has multiple views - click the tabs to switch between Table, Board, "
-            "and other views. Try the **Board** view on your weekly plan to see tasks by status!\n"
+            "# Personal Planner\n\n"
+            "Your complete life management system. Every file has multiple views — "
+            "click the view files to see your data visualized differently.\n\n"
+            "## What's Inside\n\n"
+            "| File | Best Views | Purpose |\n"
+            "|------|-----------|--------|\n"
+            "| **weekly-plan.csv** | Board, Calendar | Time-blocked weekly schedule |\n"
+            "| **habits.csv** | Habit Tracker, Heatmap | Daily habit tracking with streaks |\n"
+            "| **goals.csv** | OKR Tracker, Bar Chart | Quarterly goals with progress |\n"
+            "| **budget.csv** | Pie Chart, Line Chart | Income, expenses, and savings |\n"
+            "| **fitness.csv** | Bar Chart, Line Chart | Workout log and progress |\n"
+            "| **reading-list.csv** | Gallery, Table | Books you're reading and want to read |\n"
+            "| **projects.csv** | Board, Gantt, Timeline | Side projects and personal goals |\n"
+            "| **journal.md** | Document | Weekly reflections and wins |\n\n"
+            "## Weekly Review Checklist\n\n"
+            "- [ ] Review and update weekly plan for next week\n"
+            "- [ ] Log all habits for the week\n"
+            "- [ ] Update goal progress percentages\n"
+            "- [ ] Check budget vs. actual spending\n"
+            "- [ ] Log workouts and fitness progress\n"
+            "- [ ] Write weekly journal entry\n"
+            "- [ ] Review project next steps\n\n"
+            "## Tips\n\n"
+            "- Use the **Board** view on weekly-plan to drag tasks between statuses\n"
+            "- Use the **Calendar** view to see your week at a glance\n"
+            "- Ask the **AI assistant** to create custom dashboards for any file\n"
+            "- Every view is editable — click **Edit HTML** to customize any view\n"
         ),
     },
 ]
@@ -830,186 +951,481 @@ _COMPANY_PLANNER_FILES = [
         "name": "project-board.csv",
         "content": (
             "Task,Status,Priority,Assignee,Points,Sprint,Category,Due Date\n"
-            "Define product roadmap,Done,High,Product Lead,8,Sprint 1,Planning,2025-01-15\n"
-            "Set up project repository,Done,High,Tech Lead,3,Sprint 1,Engineering,2025-01-16\n"
-            "Design system components,Done,Medium,Designer,5,Sprint 1,Design,2025-01-20\n"
-            "User authentication flow,Done,High,Backend Dev,8,Sprint 1,Engineering,2025-01-22\n"
-            "Create landing page,In Progress,High,Frontend Dev,5,Sprint 2,Engineering,2025-02-01\n"
-            "API integration layer,In Progress,High,Backend Dev,8,Sprint 2,Engineering,2025-02-03\n"
-            "Write user documentation,In Progress,Medium,Content,3,Sprint 2,Documentation,2025-02-05\n"
-            "Performance testing,Todo,High,QA Lead,5,Sprint 2,Quality,2025-02-07\n"
-            "Mobile responsive audit,Todo,Medium,Designer,3,Sprint 3,Design,2025-02-14\n"
-            "SEO optimization,Todo,Low,Marketing,3,Sprint 3,Marketing,2025-02-14\n"
-            "Beta user interviews,Todo,High,Product Lead,5,Sprint 3,Research,2025-02-20\n"
-            "Security audit,Todo,High,Tech Lead,8,Sprint 3,Engineering,2025-02-21\n"
-            "Launch checklist,Backlog,Medium,Product Lead,3,,Planning,\n"
-            "Analytics dashboard,Backlog,Medium,Frontend Dev,8,,Engineering,\n"
-            "Customer feedback system,Backlog,Low,Product Lead,5,,Product,"
+            "Define product vision and strategy,Done,High,Sarah Chen,13,Sprint 1,Strategy,2026-01-10\n"
+            "Set up monorepo and CI/CD pipeline,Done,High,Marcus Johnson,8,Sprint 1,Engineering,2026-01-12\n"
+            "Design system and component library,Done,High,Lisa Park,8,Sprint 1,Design,2026-01-17\n"
+            "User authentication + OAuth,Done,High,David Kim,8,Sprint 1,Engineering,2026-01-20\n"
+            "Core data models + API scaffolding,Done,High,Marcus Johnson,13,Sprint 1,Engineering,2026-01-22\n"
+            "Landing page and marketing site,Done,Medium,Emily Rodriguez,5,Sprint 1,Engineering,2026-01-24\n"
+            "Real-time collaboration engine,In Progress,High,Marcus Johnson,13,Sprint 2,Engineering,2026-02-07\n"
+            "Dashboard + workspace UI,In Progress,High,Emily Rodriguez,8,Sprint 2,Engineering,2026-02-07\n"
+            "File upload + storage system,In Progress,High,David Kim,8,Sprint 2,Engineering,2026-02-05\n"
+            "User onboarding flow,In Progress,Medium,Lisa Park,5,Sprint 2,Design,2026-02-07\n"
+            "API documentation + SDK,In Progress,Medium,David Kim,5,Sprint 2,Documentation,2026-02-10\n"
+            "E2E test suite,In Progress,High,James Wright,8,Sprint 2,Quality,2026-02-10\n"
+            "Content marketing strategy,In Progress,Medium,Nina Patel,3,Sprint 2,Marketing,2026-02-07\n"
+            "Notification system,Todo,High,David Kim,8,Sprint 3,Engineering,2026-02-21\n"
+            "Role-based access control,Todo,High,Marcus Johnson,8,Sprint 3,Engineering,2026-02-21\n"
+            "Mobile-responsive redesign,Todo,Medium,Lisa Park,5,Sprint 3,Design,2026-02-18\n"
+            "Performance profiling + optimization,Todo,High,Marcus Johnson,5,Sprint 3,Engineering,2026-02-25\n"
+            "Beta user interview program,Todo,High,Sarah Chen,5,Sprint 3,Research,2026-02-20\n"
+            "SEO + analytics integration,Todo,Medium,Alex Thompson,3,Sprint 3,Marketing,2026-02-25\n"
+            "Security audit + pen test,Todo,High,James Wright,8,Sprint 3,Security,2026-02-28\n"
+            "Plugin / extension API,Backlog,Medium,Marcus Johnson,13,,Engineering,\n"
+            "Advanced analytics dashboard,Backlog,Medium,Emily Rodriguez,8,,Engineering,\n"
+            "AI-powered features,Backlog,High,David Kim,13,,Engineering,\n"
+            "Customer feedback widget,Backlog,Low,Sarah Chen,3,,Product,\n"
+            "White-label enterprise option,Backlog,Low,Marcus Johnson,13,,Engineering,"
         ),
     },
     {
         "name": "team.csv",
         "content": (
             "Name,Role,Department,Email,Status,Start Date,Location,Skills\n"
-            "Sarah Chen,Product Lead,Product,sarah@company.com,Active,2023-06-15,New York,Strategy / Roadmap / Analytics\n"
-            "Marcus Johnson,Tech Lead,Engineering,marcus@company.com,Active,2023-03-01,Remote,Architecture / Python / React\n"
-            "Emily Rodriguez,Frontend Dev,Engineering,emily@company.com,Active,2023-09-10,San Francisco,React / TypeScript / CSS\n"
-            "David Kim,Backend Dev,Engineering,david@company.com,Active,2024-01-08,Remote,Python / PostgreSQL / APIs\n"
-            "Lisa Park,Designer,Design,lisa@company.com,Active,2023-11-20,New York,Figma / UI/UX / Design Systems\n"
-            "James Wright,QA Lead,Quality,james@company.com,Active,2024-02-01,Remote,Testing / Automation / CI/CD\n"
-            "Nina Patel,Content Writer,Marketing,nina@company.com,Active,2024-03-15,Remote,Copywriting / SEO / Documentation\n"
-            "Alex Thompson,Marketing Lead,Marketing,alex@company.com,Active,2023-08-01,San Francisco,Growth / Campaigns / Analytics"
+            "Sarah Chen,CEO / Product Lead,Product,sarah@acme.co,Active,2023-06-01,New York,Strategy / Product / Analytics / Fundraising\n"
+            "Marcus Johnson,CTO / Tech Lead,Engineering,marcus@acme.co,Active,2023-06-01,San Francisco,Architecture / Python / React / DevOps\n"
+            "Emily Rodriguez,Senior Frontend,Engineering,emily@acme.co,Active,2023-09-10,San Francisco,React / TypeScript / CSS / Animation\n"
+            "David Kim,Senior Backend,Engineering,david@acme.co,Active,2024-01-08,Remote,Python / PostgreSQL / Redis / APIs\n"
+            "Lisa Park,Head of Design,Design,lisa@acme.co,Active,2023-11-20,New York,Figma / UI/UX / Design Systems / Brand\n"
+            "James Wright,QA Lead,Quality,james@acme.co,Active,2024-02-01,Remote,Testing / Automation / CI/CD / Security\n"
+            "Nina Patel,Content Lead,Marketing,nina@acme.co,Active,2024-03-15,Remote,Copywriting / SEO / Documentation / Social\n"
+            "Alex Thompson,Head of Growth,Marketing,alex@acme.co,Active,2023-08-01,San Francisco,Growth / Paid Ads / Analytics / Partnerships\n"
+            "Raj Krishnan,Mobile Engineer,Engineering,raj@acme.co,Active,2024-06-01,Remote,React Native / iOS / Android / Flutter\n"
+            "Sophie Laurent,Data Analyst,Product,sophie@acme.co,Active,2024-08-15,New York,SQL / Python / Tableau / Metrics\n"
+            "Tom Baker,DevOps Engineer,Engineering,tom@acme.co,Active,2024-09-01,Remote,AWS / Kubernetes / Terraform / Monitoring\n"
+            "Maria Gonzalez,Customer Success,Operations,maria@acme.co,Active,2024-10-01,Remote,Support / Onboarding / Retention / CRM"
         ),
     },
     {
         "name": "okrs.csv",
         "content": (
             "Objective,Key Result,Progress,Owner,Quarter,Status\n"
-            "Launch MVP by end of Q1,Complete all P0 features,75,Sarah Chen,Q1 2025,On Track\n"
-            "Launch MVP by end of Q1,Pass security audit with zero critical issues,30,Marcus Johnson,Q1 2025,On Track\n"
-            "Launch MVP by end of Q1,Achieve 95%+ test coverage on core modules,60,James Wright,Q1 2025,On Track\n"
-            "Grow to 500 beta users,Set up referral program,40,Alex Thompson,Q1 2025,Behind\n"
-            "Grow to 500 beta users,Publish 10 content pieces,50,Nina Patel,Q1 2025,On Track\n"
-            "Grow to 500 beta users,Achieve 30% activation rate,20,Sarah Chen,Q1 2025,At Risk\n"
-            "Build scalable engineering culture,Implement CI/CD pipeline,90,Marcus Johnson,Q1 2025,On Track\n"
-            "Build scalable engineering culture,Document all API endpoints,45,David Kim,Q1 2025,Behind\n"
-            "Build scalable engineering culture,Reduce deploy time to under 10 min,70,Marcus Johnson,Q1 2025,On Track"
+            "Ship production-ready v1.0,All P0 features complete and stable,70,Sarah Chen,Q1 2026,On Track\n"
+            "Ship production-ready v1.0,Pass security audit with 0 critical issues,45,James Wright,Q1 2026,On Track\n"
+            "Ship production-ready v1.0,Achieve 99.9% uptime SLA,85,Tom Baker,Q1 2026,Ahead\n"
+            "Ship production-ready v1.0,Load test: support 10K concurrent users,30,Marcus Johnson,Q1 2026,Behind\n"
+            "Acquire 1000 beta users,Launch referral program with 20% conversion,35,Alex Thompson,Q1 2026,On Track\n"
+            "Acquire 1000 beta users,Publish 15 high-quality content pieces,55,Nina Patel,Q1 2026,On Track\n"
+            "Acquire 1000 beta users,Achieve 40% activation rate (signup → value),28,Sarah Chen,Q1 2026,At Risk\n"
+            "Acquire 1000 beta users,Reach 500 waitlist signups from organic,60,Alex Thompson,Q1 2026,On Track\n"
+            "Build world-class engineering culture,Ship features within 2-day cycle time,65,Marcus Johnson,Q1 2026,On Track\n"
+            "Build world-class engineering culture,95%+ test coverage on core modules,72,James Wright,Q1 2026,On Track\n"
+            "Build world-class engineering culture,100% of API endpoints documented,50,David Kim,Q1 2026,Behind\n"
+            "Build world-class engineering culture,Zero-downtime deployment pipeline,90,Tom Baker,Q1 2026,Ahead\n"
+            "Delight every user,Achieve NPS score of 50+,42,Maria Gonzalez,Q1 2026,On Track\n"
+            "Delight every user,Median support response time under 2 hours,75,Maria Gonzalez,Q1 2026,On Track\n"
+            "Delight every user,Ship 3 most-requested features from feedback,33,Sarah Chen,Q1 2026,On Track\n"
+            "Delight every user,95% customer satisfaction on onboarding,80,Maria Gonzalez,Q1 2026,Ahead"
         ),
     },
     {
         "name": "roadmap.csv",
         "content": (
-            "Feature,Quarter,Status,Priority,Team,Description\n"
-            "User Authentication,Q1 2025,Shipped,P0,Engineering,Email/password and OAuth login\n"
-            "Core Dashboard,Q1 2025,Shipped,P0,Engineering,Main app dashboard with widgets\n"
-            "File Management,Q1 2025,In Progress,P0,Engineering,Upload and organize files\n"
-            "Team Collaboration,Q1 2025,In Progress,P1,Engineering,Real-time shared editing\n"
-            "API v1,Q1 2025,In Progress,P0,Engineering,Public REST API\n"
-            "Mobile App,Q2 2025,Planned,P1,Engineering,iOS and Android apps\n"
-            "Advanced Analytics,Q2 2025,Planned,P1,Product,Usage analytics and reports\n"
-            "Marketplace,Q2 2025,Planned,P2,Product,Third-party integrations\n"
-            "Enterprise SSO,Q3 2025,Planned,P1,Engineering,SAML and OIDC support\n"
-            "AI Assistant,Q3 2025,Planned,P2,Engineering,AI-powered features\n"
-            "White-label Option,Q4 2025,Planned,P2,Product,Custom branding for enterprise"
-        ),
-    },
-    {
-        "name": "meeting-notes.md",
-        "content": (
-            "# Company Meeting Notes\n\n"
-            "## Weekly Standup - Feb 10, 2025\n\n"
-            "**Attendees:** Sarah, Marcus, Emily, David, Lisa, James\n\n"
-            "### Updates\n"
-            "- **Sarah**: Finalized Q1 roadmap, starting beta user outreach\n"
-            "- **Marcus**: CI/CD pipeline deployed, working on API rate limiting\n"
-            "- **Emily**: Landing page 80% complete, needs design review\n"
-            "- **David**: Auth flow shipped, starting API integration\n"
-            "- **Lisa**: Design system v1 done, starting mobile wireframes\n"
-            "- **James**: Test framework set up, writing integration tests\n\n"
-            "### Decisions\n"
-            "- Sprint 2 ends Feb 7, Sprint 3 starts Feb 10\n"
-            "- Beta launch target: March 1\n\n"
-            "### Action Items\n"
-            "- [ ] Emily: Share landing page for review by Wed\n"
-            "- [ ] Marcus: Document deployment process\n"
-            "- [ ] Sarah: Send beta invite emails to waitlist\n\n"
-            "---\n\n"
-            "## Sprint 1 Retrospective - Jan 24, 2025\n\n"
-            "### What Went Well\n"
-            "- Shipped auth flow ahead of schedule\n"
-            "- Great collaboration between design and engineering\n"
-            "- Zero production incidents\n\n"
-            "### What To Improve\n"
-            "- Standups running over 15 minutes\n"
-            "- Need better ticket descriptions\n"
-            "- More async communication to reduce meetings\n\n"
-            "### Action Items\n"
-            "- [ ] Timebox standups to 10 minutes\n"
-            "- [ ] Add acceptance criteria template to tickets\n"
-            "- [ ] Start using async updates in Slack\n"
+            "Feature,Quarter,Status,Priority,Team,Start Date,End Date,Description\n"
+            "User Authentication + OAuth,Q1 2026,Shipped,P0,Engineering,2026-01-06,2026-01-20,Email/password + Google/GitHub OAuth\n"
+            "Core Workspace + Dashboard,Q1 2026,Shipped,P0,Engineering,2026-01-13,2026-01-31,Main app layout with file management\n"
+            "Design System v1,Q1 2026,Shipped,P0,Design,2026-01-06,2026-01-24,Component library + brand guidelines\n"
+            "Real-time Collaboration,Q1 2026,In Progress,P0,Engineering,2026-01-27,2026-02-14,Live cursors + multiplayer editing\n"
+            "File Management + Storage,Q1 2026,In Progress,P0,Engineering,2026-01-27,2026-02-07,Upload / organize / version files\n"
+            "API v1 + Documentation,Q1 2026,In Progress,P1,Engineering,2026-02-03,2026-02-21,Public REST API + SDK\n"
+            "Onboarding + Activation,Q1 2026,In Progress,P1,Design,2026-02-03,2026-02-14,Interactive tutorial + templates\n"
+            "Notification System,Q1 2026,Planned,P1,Engineering,2026-02-17,2026-02-28,Email + in-app + push\n"
+            "RBAC + Team Permissions,Q1 2026,Planned,P0,Engineering,2026-02-17,2026-03-07,Role-based access control\n"
+            "Mobile App (iOS + Android),Q2 2026,Planned,P1,Engineering,2026-04-01,2026-06-30,React Native cross-platform\n"
+            "Advanced Analytics,Q2 2026,Planned,P1,Product,2026-04-01,2026-05-31,Usage metrics + custom reports\n"
+            "Plugin Marketplace,Q2 2026,Planned,P2,Engineering,2026-05-01,2026-06-30,Third-party extensions\n"
+            "Enterprise SSO (SAML/OIDC),Q3 2026,Planned,P1,Engineering,2026-07-01,2026-08-15,SAML + OIDC federation\n"
+            "AI Assistant v2,Q3 2026,Planned,P1,Engineering,2026-07-01,2026-09-30,Smart suggestions + automation\n"
+            "White-label + Custom Branding,Q4 2026,Planned,P2,Product,2026-10-01,2026-12-15,Enterprise customization\n"
+            "Offline Mode + Sync,Q4 2026,Planned,P2,Engineering,2026-10-01,2026-12-31,Work offline with auto-sync"
         ),
     },
     {
         "name": "kpis.csv",
         "content": (
-            "Metric,Current,Target,Previous,Unit,Category\n"
-            "Monthly Active Users,342,500,280,,Growth\n"
-            "Weekly Signups,45,75,38,,Growth\n"
-            "Activation Rate,28,40,22,%,Product\n"
-            "Session Duration,4.2,5,3.8,min,Product\n"
-            "NPS Score,42,50,35,,Satisfaction\n"
-            "Bug Backlog,23,15,31,,Quality\n"
-            "Test Coverage,72,90,65,%,Quality\n"
-            "Deploy Frequency,3,5,2,/week,Engineering\n"
-            "Revenue MRR,2800,5000,1900,$,Revenue\n"
-            "Customer Acquisition Cost,32,25,45,$,Revenue"
+            "Metric,Current,Target,Previous,Unit,Category,Trend\n"
+            "Monthly Active Users,847,1000,620,,Growth,Up\n"
+            "Weekly Signups,95,150,72,,Growth,Up\n"
+            "Daily Active Users,285,400,210,,Growth,Up\n"
+            "Activation Rate (D7),34,45,28,%,Product,Up\n"
+            "Session Duration,5.8,7,4.9,min,Product,Up\n"
+            "Feature Adoption Rate,42,60,35,%,Product,Up\n"
+            "NPS Score,48,55,38,,Satisfaction,Up\n"
+            "Customer Satisfaction,92,95,88,%,Satisfaction,Up\n"
+            "Support Response Time,1.8,1,2.5,hours,Satisfaction,Down\n"
+            "Bug Backlog,18,10,28,,Quality,Down\n"
+            "Test Coverage,78,95,68,%,Quality,Up\n"
+            "Deploy Frequency,4,7,2,/week,Engineering,Up\n"
+            "Cycle Time,3.2,2,4.5,days,Engineering,Down\n"
+            "Revenue MRR,4200,10000,2800,$,Revenue,Up\n"
+            "Annual Run Rate,50400,120000,33600,$,Revenue,Up\n"
+            "Customer Acquisition Cost,28,20,42,$,Revenue,Down\n"
+            "Lifetime Value,340,500,280,$,Revenue,Up\n"
+            "Burn Rate,85000,75000,92000,$/mo,Finance,Down\n"
+            "Runway,14,18,11,months,Finance,Up"
+        ),
+    },
+    {
+        "name": "clients.csv",
+        "content": (
+            "Company,Contact,Email,Status,Deal Size,Stage,Source,Last Contact,Notes\n"
+            "TechCorp Inc,John Miller,john@techcorp.com,Active,$2400/yr,Customer,Inbound,2026-02-12,Enterprise plan - 25 seats\n"
+            "StartupXYZ,Amy Lee,amy@startupxyz.com,Active,$960/yr,Customer,Referral,2026-02-10,Team plan - growing fast\n"
+            "DesignHub,Carlos Ruiz,carlos@designhub.io,Active,$480/yr,Customer,Content,2026-02-08,Pro plan - design agency\n"
+            "CloudNine Labs,Priya Sharma,priya@cloudnine.dev,Trial,,$Trial,ProductHunt,2026-02-14,14-day trial started\n"
+            "GrowthMetrics,Sam Wilson,sam@growthmetrics.co,Trial,,$Trial,Organic,2026-02-13,Interested in analytics features\n"
+            "DataFlow Systems,Rachel Green,rachel@dataflow.io,Prospect,$4800/yr,Negotiation,LinkedIn,2026-02-11,Enterprise - 50 seats - demo scheduled\n"
+            "InnovateCo,Mike Chen,mike@innovateco.com,Prospect,$1200/yr,Proposal,Conference,2026-02-09,Sent pricing proposal\n"
+            "MediaPulse,Laura Kim,laura@mediapulse.com,Prospect,$960/yr,Qualification,Inbound,2026-02-07,Needs custom integrations\n"
+            "QuantumAI,David Park,david@quantumai.co,Lead,,$Discovery,Referral,2026-02-06,AI startup - interested in API\n"
+            "RetailPlus,Emma Davis,emma@retailplus.com,Lead,,$Discovery,Webinar,2026-02-05,E-commerce company - 100 employees\n"
+            "FinanceFirst,Robert Lee,robert@financefirst.com,Lost,$2400/yr,Closed Lost,Outbound,2026-01-28,Chose competitor - price sensitive\n"
+            "AgriTech Global,Nina Patel,nina@agritech.io,Won,$1200/yr,Closed Won,Partner,2026-01-30,Annual plan signed"
         ),
     },
     {
         "name": "budget.csv",
         "content": (
             "Category,Item,Q1 Budget,Q1 Actual,Q2 Budget,Status\n"
-            "Revenue,Product Sales,15000,12500,25000,Behind\n"
-            "Revenue,Services,5000,6200,7000,Ahead\n"
-            "People,Salaries,48000,48000,52000,On Budget\n"
-            "People,Benefits,9600,9600,10400,On Budget\n"
-            "People,Contractors,6000,4500,8000,Under\n"
-            "Infrastructure,Cloud Hosting,2400,2100,3000,Under\n"
-            "Infrastructure,SaaS Tools,1800,2000,1800,Over\n"
-            "Marketing,Paid Ads,3000,1800,5000,Under\n"
-            "Marketing,Content,1500,1200,2000,Under\n"
-            "Marketing,Events,2000,0,3000,Under\n"
-            "Office,Coworking,1200,1200,1200,On Budget\n"
-            "Legal,Accounting,1500,1500,1500,On Budget"
+            "Revenue,Product Subscriptions,18000,14200,35000,Behind\n"
+            "Revenue,Professional Services,8000,9500,12000,Ahead\n"
+            "Revenue,Enterprise Deals,5000,2400,15000,Behind\n"
+            "People,Engineering Salaries,72000,72000,78000,On Budget\n"
+            "People,Design + Product Salaries,36000,36000,36000,On Budget\n"
+            "People,Sales + Marketing Salaries,24000,24000,28000,On Budget\n"
+            "People,Operations + Support,12000,12000,15000,On Budget\n"
+            "People,Benefits + Insurance,14400,14400,15700,On Budget\n"
+            "People,Contractors + Freelance,9000,6800,12000,Under\n"
+            "Infrastructure,AWS / Cloud Hosting,3600,3200,4500,Under\n"
+            "Infrastructure,SaaS Tools,2400,2800,2400,Over\n"
+            "Infrastructure,Monitoring + Security,1200,1000,1500,Under\n"
+            "Marketing,Paid Acquisition,4500,2800,8000,Under\n"
+            "Marketing,Content + SEO,2000,1500,3000,Under\n"
+            "Marketing,Events + Conferences,3000,1200,5000,Under\n"
+            "Office,Coworking Spaces,2400,2400,2400,On Budget\n"
+            "Office,Equipment + Hardware,3000,4200,1500,Over\n"
+            "Legal,Legal + Accounting,2500,2500,2500,On Budget\n"
+            "Legal,Insurance,1800,1800,1800,On Budget"
+        ),
+    },
+    {
+        "name": "retrospective.csv",
+        "content": (
+            "Item,Type,Sprint,Votes,Owner,Status\n"
+            "Shipped auth flow 2 days early,What Went Well,Sprint 1,5,Marcus Johnson,Celebrated\n"
+            "Design-engineering collaboration excellent,What Went Well,Sprint 1,4,Lisa Park,Celebrated\n"
+            "Zero production incidents,What Went Well,Sprint 1,6,Tom Baker,Celebrated\n"
+            "Standups running over 15 minutes,To Improve,Sprint 1,4,Sarah Chen,In Progress\n"
+            "Ticket descriptions lack acceptance criteria,To Improve,Sprint 1,5,Sarah Chen,Done\n"
+            "Too many meetings breaking focus time,To Improve,Sprint 1,6,Marcus Johnson,In Progress\n"
+            "Timebox standups to 10 minutes,Action Item,Sprint 1,0,Sarah Chen,Done\n"
+            "Add acceptance criteria template to tickets,Action Item,Sprint 1,0,Sarah Chen,Done\n"
+            "Block 2-hour focus time on calendars,Action Item,Sprint 1,0,Marcus Johnson,In Progress\n"
+            "CI/CD pipeline saves 3 hours per deploy,What Went Well,Sprint 2,5,Tom Baker,Celebrated\n"
+            "Landing page got great user feedback,What Went Well,Sprint 2,4,Emily Rodriguez,Celebrated\n"
+            "Great async communication this sprint,What Went Well,Sprint 2,3,Nina Patel,Celebrated\n"
+            "Code review turnaround too slow (2+ days),To Improve,Sprint 2,5,Marcus Johnson,Todo\n"
+            "Need better monitoring for API errors,To Improve,Sprint 2,4,David Kim,Todo\n"
+            "Onboarding docs are outdated,To Improve,Sprint 2,3,Nina Patel,Todo\n"
+            "Set 24h SLA for code reviews,Action Item,Sprint 2,0,Marcus Johnson,Todo\n"
+            "Set up error alerting in PagerDuty,Action Item,Sprint 2,0,Tom Baker,Todo\n"
+            "Schedule docs update sprint,Action Item,Sprint 2,0,Nina Patel,Todo"
+        ),
+    },
+    {
+        "name": "meeting-notes.md",
+        "content": (
+            "# Team Meeting Notes\n\n"
+            "## All-Hands - Feb 14, 2026\n\n"
+            "**Attendees:** Full team (12 people)\n\n"
+            "### Company Update\n"
+            "- **MRR:** $4,200 (+50% MoM)\n"
+            "- **Users:** 847 MAU, 95 signups this week\n"
+            "- **Runway:** 14 months at current burn\n\n"
+            "### Sprint 2 Review\n"
+            "- Real-time collaboration engine: 80% complete\n"
+            "- File management: shipped to staging\n"
+            "- E2E test suite: 65% coverage and growing\n"
+            "- Content: 8 of 15 pieces published\n\n"
+            "### Sprint 3 Planning\n"
+            "- Focus: notifications, RBAC, performance\n"
+            "- Beta launch target: March 7\n"
+            "- Security audit scheduled: Feb 28\n\n"
+            "### Decisions\n"
+            "- Hire 2 more engineers in Q2\n"
+            "- Launch referral program Feb 21\n"
+            "- Enterprise pilot with DataFlow Systems\n\n"
+            "---\n\n"
+            "## Weekly Standup - Feb 10, 2026\n\n"
+            "**Attendees:** Sarah, Marcus, Emily, David, Lisa, James, Tom\n\n"
+            "### Updates\n"
+            "- **Marcus**: Collab engine - CRDT implementation working, testing edge cases\n"
+            "- **Emily**: Dashboard UI complete, starting workspace settings\n"
+            "- **David**: File storage API done, starting notification service\n"
+            "- **Lisa**: Onboarding screens in review, mobile wireframes started\n"
+            "- **James**: E2E framework solid, writing auth + file test suites\n"
+            "- **Tom**: Deployed staging environment, monitoring dashboards live\n\n"
+            "### Blockers\n"
+            "- Need design review for notification preferences UI\n"
+            "- AWS S3 permissions issue — Tom investigating\n\n"
+            "### Action Items\n"
+            "- [ ] Lisa: Notification preferences mockup by Wednesday\n"
+            "- [ ] Tom: Resolve S3 permissions, document setup\n"
+            "- [ ] Sarah: Schedule DataFlow Systems demo for next week\n"
+            "- [ ] Marcus: Document collaboration protocol for the team\n"
         ),
     },
     {
         "name": "notes.md",
         "content": (
             "# Company Planner\n\n"
-            "## How to Use This Planner\n\n"
-            "Your company planner contains everything your team needs to stay aligned:\n\n"
-            "- **Project Board** - Kanban-style task tracking by sprint\n"
-            "- **Team** - Team directory with roles and contact info\n"
-            "- **OKRs** - Quarterly objectives and key results\n"
-            "- **Roadmap** - Product roadmap by quarter\n"
-            "- **KPIs** - Key performance indicators dashboard\n"
-            "- **Budget** - Quarterly budget tracker\n"
-            "- **Meeting Notes** - Running log of team meetings\n\n"
-            "### Tips\n\n"
-            "1. Use the **Board** view on Project Board to see tasks by status (like Jira)\n"
-            "2. Use the **OKR Tracker** view on OKRs to see progress visually\n"
-            "3. Use the **KPI Dashboard** view on KPIs for at-a-glance metrics\n"
-            "4. Use the **Roadmap** view to see features by quarter\n"
-            "5. Review OKRs weekly and update progress %\n\n"
-            "### Keyboard Shortcuts\n\n"
-            "- **Tab** between views on any file\n"
-            "- **/** to search across all files\n"
-            "- **Cmd+K** to open the command palette\n"
+            "Everything your team needs to build, ship, and grow — all in one place.\n\n"
+            "## What's Inside\n\n"
+            "| File | Best Views | Purpose |\n"
+            "|------|-----------|--------|\n"
+            "| **project-board.csv** | Sprint Board, Board, Gantt | Sprint tasks and backlog |\n"
+            "| **team.csv** | Gallery, Table | Team directory with skills |\n"
+            "| **okrs.csv** | OKR Tracker, Bar Chart | Quarterly objectives and key results |\n"
+            "| **roadmap.csv** | Roadmap, Timeline, Gantt | Product roadmap by quarter |\n"
+            "| **kpis.csv** | KPI Dashboard, Line Chart | Key metrics and trends |\n"
+            "| **clients.csv** | CRM Pipeline, Table | Sales pipeline and customer tracking |\n"
+            "| **budget.csv** | Pie Chart, Line Chart, Summary | Revenue, costs, and runway |\n"
+            "| **retrospective.csv** | Retro Board, Table | Sprint retrospectives |\n"
+            "| **meeting-notes.md** | Document | Team meetings and decisions |\n\n"
+            "## Weekly Rituals\n\n"
+            "- **Monday**: Sprint standup, review sprint board\n"
+            "- **Wednesday**: OKR check-in, update progress %\n"
+            "- **Friday**: Sprint review, update KPIs\n"
+            "- **Bi-weekly**: Sprint retrospective\n"
+            "- **Monthly**: All-hands, roadmap review, budget review\n\n"
+            "## Tips\n\n"
+            "- Use **Sprint Board** view on project-board for daily standups\n"
+            "- Use **CRM Pipeline** view on clients to track your sales funnel\n"
+            "- Use **KPI Dashboard** to present metrics in meetings\n"
+            "- Ask the **AI assistant** to create custom dashboards for any data\n"
+            "- Every view is editable — click **Edit HTML** to customize\n"
         ),
     },
 ]
 
-# Map file names to the custom views (instances) that should be created for them.
+# Map file names to the views (instances) that should be created for them.
 # Slugs starting with "app-" are marketplace apps that get auto-installed.
 _PERSONAL_VIEWS: dict[str, list[str]] = {
     "weekly-plan.csv": ["table", "board", "calendar"],
-    "habits.csv": ["table", "app-habit-tracker"],
-    "goals.csv": ["table", "app-okr-tracker"],
-    "budget.csv": ["table", "app-line-chart"],
-    "reading-list.csv": ["table"],
+    "habits.csv": ["table", "app-habit-tracker", "app-heatmap"],
+    "goals.csv": ["table", "app-okr-tracker", "app-bar-chart"],
+    "budget.csv": ["table", "app-pie-chart", "app-line-chart"],
+    "fitness.csv": ["table", "app-bar-chart", "app-line-chart"],
+    "reading-list.csv": ["table", "app-gallery"],
+    "projects.csv": ["table", "board", "app-gantt", "app-timeline"],
+    "journal.md": ["document"],
     "notes.md": ["document"],
 }
 
 _COMPANY_VIEWS: dict[str, list[str]] = {
-    "project-board.csv": ["table", "board", "app-sprint-board"],
-    "team.csv": ["table"],
-    "okrs.csv": ["table", "app-okr-tracker"],
-    "roadmap.csv": ["table", "app-roadmap"],
+    "project-board.csv": ["table", "board", "app-sprint-board", "app-gantt"],
+    "team.csv": ["table", "app-gallery"],
+    "okrs.csv": ["table", "app-okr-tracker", "app-bar-chart"],
+    "roadmap.csv": ["table", "app-roadmap", "app-timeline", "app-gantt"],
+    "kpis.csv": ["table", "app-kpi-dashboard", "app-line-chart", "app-bar-chart"],
+    "clients.csv": ["table", "app-crm", "app-pie-chart"],
+    "budget.csv": ["table", "app-pie-chart", "app-line-chart", "app-summary-stats"],
+    "retrospective.csv": ["table", "app-retro-board"],
     "meeting-notes.md": ["document"],
-    "kpis.csv": ["table", "app-kpi-dashboard"],
-    "budget.csv": ["table", "app-line-chart"],
     "notes.md": ["document"],
+}
+
+
+# Custom HTML dashboard views — created as custom-view instances
+# Key is the file name, value is list of {name, content} dicts
+_LIFE_DASHBOARD_HTML = """\
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Life Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px}
+.card{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h3{font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.big-num{font-size:36px;font-weight:700;line-height:1}
+.sub{font-size:13px;color:#94a3b8;margin-top:4px}
+.progress-bar{height:8px;background:#e2e8f0;border-radius:4px;margin-top:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;transition:width .3s}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
+.green{color:#16a34a;background:#dcfce7}.blue{color:#2563eb;background:#dbeafe}
+.amber{color:#d97706;background:#fef3c7}.red{color:#dc2626;background:#fee2e2}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.header-sub{color:#64748b;font-size:14px;margin-bottom:20px}
+.list{list-style:none}.list li{padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+.list li:last-child{border:none}
+.habit-row{display:flex;gap:4px;align-items:center}
+.dot{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px}
+.dot.yes{background:#dcfce7;color:#16a34a}.dot.no{background:#fee2e2;color:#dc2626}
+</style></head><body>
+<h1>Life Dashboard</h1>
+<p class="header-sub">Your personal metrics at a glance</p>
+<div class="grid">
+<div class="card"><h3>Weekly Tasks</h3><div id="tasks"></div></div>
+<div class="card"><h3>Habit Streaks</h3><div id="habits"></div></div>
+<div class="card"><h3>Goal Progress</h3><div id="goals"></div></div>
+<div class="card"><h3>Budget Summary</h3><div id="budget"></div></div>
+<div class="card"><h3>Fitness This Week</h3><div id="fitness"></div></div>
+<div class="card"><h3>Reading Progress</h3><div id="reading"></div></div>
+</div>
+<script>
+const csv=window.__SOURCE_CSV__||'';
+const rows=csv.trim().split('\\n').slice(1).map(r=>{const cols=[];let cur='',inQ=false;for(const c of r){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){cols.push(cur.trim());cur=''}else cur+=c}cols.push(cur.trim());return cols});
+const hdr=(csv.trim().split('\\n')[0]||'').split(',').map(h=>h.trim());
+const statusIdx=hdr.indexOf('Status');
+if(statusIdx>=0){
+const done=rows.filter(r=>r[statusIdx]==='Done').length;
+const ip=rows.filter(r=>r[statusIdx]==='In Progress').length;
+const todo=rows.filter(r=>r[statusIdx]==='Todo').length;
+document.getElementById('tasks').innerHTML=
+'<div class="big-num">'+rows.length+'</div><div class="sub">total tasks this week</div>'+
+'<div style="display:flex;gap:8px;margin-top:12px">'+
+'<span class="tag green">'+done+' done</span>'+
+'<span class="tag blue">'+ip+' in progress</span>'+
+'<span class="tag amber">'+todo+' todo</span></div>';
+}else{document.getElementById('tasks').innerHTML='<div class="sub">Open weekly-plan.csv to see tasks</div>'}
+['habits','goals','budget','fitness','reading'].forEach(id=>{
+document.getElementById(id).innerHTML='<div class="sub">Data loaded from your files</div>';
+});
+</script></body></html>
+"""
+
+_BUDGET_DASHBOARD_HTML = """\
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Budget Overview</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.card{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0}
+.card h3{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.big{font-size:32px;font-weight:700;line-height:1}
+.green{color:#16a34a}.red{color:#dc2626}.blue{color:#2563eb}.amber{color:#d97706}
+.sub{font-size:13px;color:#94a3b8;margin-top:4px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.header-sub{color:#64748b;font-size:14px;margin-bottom:20px}
+.bar-chart{margin-top:24px}
+.bar-row{display:flex;align-items:center;margin-bottom:10px}
+.bar-label{width:120px;font-size:13px;color:#475569;flex-shrink:0}
+.bar-track{flex:1;height:24px;background:#f1f5f9;border-radius:6px;position:relative;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#fff;font-weight:600;min-width:fit-content}
+.bar-budget{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8}
+.legend{display:flex;gap:16px;margin-top:16px;font-size:12px;color:#64748b}
+.legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px}
+</style></head><body>
+<h1>Budget Overview</h1>
+<p class="header-sub">Monthly income, expenses, and savings at a glance</p>
+<div class="grid" id="summary"></div>
+<div class="bar-chart" id="bars"></div>
+<div class="legend"><span><span class="legend-dot" style="background:#3b82f6"></span>Actual</span><span><span class="legend-dot" style="background:#e2e8f0"></span>Budgeted</span></div>
+<script>
+const csv=window.__SOURCE_CSV__||'';
+const lines=csv.trim().split('\\n');
+const hdr=lines[0].split(',').map(h=>h.trim());
+const rows=lines.slice(1).map(r=>{const cols=[];let cur='',inQ=false;for(const c of r){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){cols.push(cur.trim());cur=''}else cur+=c}cols.push(cur.trim());return cols});
+const ci=hdr.indexOf('Category'),ii=hdr.indexOf('Item'),bi=hdr.indexOf('Budgeted'),ai=hdr.indexOf('Actual'),ti=hdr.indexOf('Type');
+let totalIncome=0,totalBudgeted=0,totalActual=0,totalSavings=0;
+const categories=new Map();
+rows.forEach(r=>{
+const cat=r[ci]||'',budgeted=parseFloat(r[bi])||0,actual=parseFloat(r[ai])||0,type=r[ti]||'expense';
+if(type==='income'){totalIncome+=actual}
+else if(type==='savings'){totalSavings+=actual;totalBudgeted+=budgeted;totalActual+=actual}
+else{totalBudgeted+=budgeted;totalActual+=actual}
+if(type!=='income'){
+if(!categories.has(cat))categories.set(cat,{budgeted:0,actual:0});
+const c=categories.get(cat);c.budgeted+=budgeted;c.actual+=actual;
+}
+});
+const remaining=totalIncome-totalActual-totalSavings;
+const s=document.getElementById('summary');
+s.innerHTML=
+'<div class="card"><h3>Total Income</h3><div class="big green">$'+totalIncome.toLocaleString()+'</div></div>'+
+'<div class="card"><h3>Total Spent</h3><div class="big red">$'+totalActual.toLocaleString()+'</div><div class="sub">of $'+totalBudgeted.toLocaleString()+' budgeted</div></div>'+
+'<div class="card"><h3>Savings</h3><div class="big blue">$'+totalSavings.toLocaleString()+'</div><div class="sub">'+Math.round(totalSavings/totalIncome*100)+'% savings rate</div></div>'+
+'<div class="card"><h3>Remaining</h3><div class="big '+(remaining>=0?'green':'red')+'">$'+remaining.toLocaleString()+'</div><div class="sub">'+(remaining>=0?'under budget':'over budget')+'</div></div>';
+const maxVal=Math.max(...[...categories.values()].map(c=>Math.max(c.budgeted,c.actual)));
+const b=document.getElementById('bars');
+let barsHtml='';
+categories.forEach((v,k)=>{
+const pct=Math.round(v.actual/maxVal*100);
+const color=v.actual>v.budgeted?'#ef4444':'#3b82f6';
+barsHtml+='<div class="bar-row"><div class="bar-label">'+k+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'">$'+v.actual.toLocaleString()+'</div><div class="bar-budget">$'+v.budgeted.toLocaleString()+'</div></div></div>';
+});
+b.innerHTML=barsHtml;
+</script></body></html>
+"""
+
+_COMPANY_DASHBOARD_HTML = """\
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Company Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:24px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.header-sub{color:#64748b;font-size:14px;margin-bottom:20px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
+.metric{background:#fff;border-radius:12px;padding:16px;border:1px solid #e2e8f0}
+.metric-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+.metric-value{font-size:28px;font-weight:700;margin:4px 0}
+.metric-sub{font-size:12px;display:flex;align-items:center;gap:4px}
+.up{color:#16a34a}.down{color:#dc2626}.neutral{color:#64748b}
+.section{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;margin-bottom:16px}
+.section h2{font-size:15px;font-weight:600;margin-bottom:12px}
+.progress-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.progress-label{width:200px;font-size:13px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.progress-bar{flex:1;height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;border-radius:5px}
+.progress-pct{width:40px;text-align:right;font-size:13px;font-weight:600;color:#475569}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.status-card{text-align:center;padding:12px;border-radius:8px}
+.status-num{font-size:24px;font-weight:700}
+.status-label{font-size:11px;color:#64748b;margin-top:2px}
+</style></head><body>
+<h1>Company Dashboard</h1>
+<p class="header-sub">Key metrics and progress overview</p>
+<div class="metrics" id="kpis"></div>
+<div class="section"><h2>Sprint Progress</h2><div class="status-grid" id="sprint"></div></div>
+<div class="section"><h2>OKR Progress</h2><div id="okrs"></div></div>
+<script>
+const csv=window.__SOURCE_CSV__||'';
+const lines=csv.trim().split('\\n');
+const hdr=lines[0].split(',').map(h=>h.trim());
+const rows=lines.slice(1).map(r=>{const cols=[];let cur='',inQ=false;for(const c of r){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){cols.push(cur.trim());cur=''}else cur+=c}cols.push(cur.trim());return cols});
+const mi=hdr.indexOf('Metric'),ci=hdr.indexOf('Current'),ti=hdr.indexOf('Target'),pi=hdr.indexOf('Previous'),tri=hdr.indexOf('Trend');
+const kpiEl=document.getElementById('kpis');
+let kpiHtml='';
+rows.slice(0,8).forEach(r=>{
+const metric=r[mi]||'',current=r[ci]||'0',target=r[ti]||'0',trend=r[tri]||'';
+const arrow=trend==='Up'?'↑':trend==='Down'?'↓':'→';
+const cls=trend==='Up'?'up':trend==='Down'?'down':'neutral';
+kpiHtml+='<div class="metric"><div class="metric-label">'+metric+'</div><div class="metric-value">'+current+'</div><div class="metric-sub '+cls+'">'+arrow+' vs '+r[pi]+' prev · target '+target+'</div></div>';
+});
+kpiEl.innerHTML=kpiHtml;
+document.getElementById('sprint').innerHTML=
+'<div class="status-card" style="background:#dcfce7"><div class="status-num" style="color:#16a34a">6</div><div class="status-label">Done</div></div>'+
+'<div class="status-card" style="background:#dbeafe"><div class="status-num" style="color:#2563eb">7</div><div class="status-label">In Progress</div></div>'+
+'<div class="status-card" style="background:#fef3c7"><div class="status-num" style="color:#d97706">7</div><div class="status-label">Todo</div></div>'+
+'<div class="status-card" style="background:#f1f5f9"><div class="status-num" style="color:#64748b">5</div><div class="status-label">Backlog</div></div>';
+document.getElementById('okrs').innerHTML=
+'<div class="progress-row"><div class="progress-label">Ship production-ready v1.0</div><div class="progress-bar"><div class="progress-fill" style="width:58%;background:#3b82f6"></div></div><div class="progress-pct">58%</div></div>'+
+'<div class="progress-row"><div class="progress-label">Acquire 1000 beta users</div><div class="progress-bar"><div class="progress-fill" style="width:45%;background:#8b5cf6"></div></div><div class="progress-pct">45%</div></div>'+
+'<div class="progress-row"><div class="progress-label">Build world-class eng culture</div><div class="progress-bar"><div class="progress-fill" style="width:69%;background:#16a34a"></div></div><div class="progress-pct">69%</div></div>'+
+'<div class="progress-row"><div class="progress-label">Delight every user</div><div class="progress-bar"><div class="progress-fill" style="width:58%;background:#f59e0b"></div></div><div class="progress-pct">58%</div></div>';
+</script></body></html>
+"""
+
+# Custom HTML views to create as custom-view instances
+_PERSONAL_CUSTOM_VIEWS: dict[str, list[dict]] = {
+    "budget.csv": [
+        {"name": "Budget Dashboard.html", "content": _BUDGET_DASHBOARD_HTML},
+    ],
+}
+
+_COMPANY_CUSTOM_VIEWS: dict[str, list[dict]] = {
+    "kpis.csv": [
+        {"name": "Company Dashboard.html", "content": _COMPANY_DASHBOARD_HTML},
+    ],
 }
 
 
@@ -1077,6 +1493,7 @@ async def seed_default_planner_content(
         name: str,
         files_spec: list[dict],
         views_spec: dict[str, list[str]],
+        custom_views_spec: dict[str, list[dict]] | None = None,
     ) -> None:
         folder = await create_folder(db, workspace_id, owner_id, name, parent_id=parent_id)
         for spec in files_spec:
@@ -1089,14 +1506,25 @@ async def seed_default_planner_content(
                 app_type = await _resolve_app_type(db, slug, workspace_id)
                 if app_type:
                     await create_instance(db, storage, file, app_type)
+            # Custom HTML views
+            if custom_views_spec:
+                for cv in custom_views_spec.get(spec["name"], []):
+                    custom_app = await get_app_type_by_slug(db, "custom-view", workspace_id)
+                    if custom_app:
+                        await create_instance(
+                            db, storage, file, custom_app,
+                            name=cv["name"], content=cv["content"],
+                        )
             # Always add text-editor
             editor = await get_app_type_by_slug(db, "text-editor", workspace_id)
             if editor:
                 await create_instance(db, storage, file, editor)
 
     await _create_planner(
-        files_folder_id, "Personal Planner", _PERSONAL_PLANNER_FILES, _PERSONAL_VIEWS,
+        files_folder_id, "Personal Planner",
+        _PERSONAL_PLANNER_FILES, _PERSONAL_VIEWS, _PERSONAL_CUSTOM_VIEWS,
     )
     await _create_planner(
-        files_folder_id, "Company Planner", _COMPANY_PLANNER_FILES, _COMPANY_VIEWS,
+        files_folder_id, "Company Planner",
+        _COMPANY_PLANNER_FILES, _COMPANY_VIEWS, _COMPANY_CUSTOM_VIEWS,
     )

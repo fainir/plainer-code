@@ -818,12 +818,16 @@ export default function Drive() {
     queryKey: isShared ? ['shared-files'] : ['drive-files', currentFolderId],
     queryFn: () =>
       isShared ? listSharedWithMe() : listFiles(currentFolderId || undefined),
+    refetchInterval: (query) =>
+      isPrivate && query.state.data && query.state.data.length === 0 ? 3000 : false,
   });
 
   const { data: folders, isLoading: foldersLoading } = useQuery({
     queryKey: ['drive-folders', currentFolderId],
     queryFn: () => listFolders(currentFolderId || undefined),
     enabled: isPrivate,
+    refetchInterval: (query) =>
+      query.state.data && query.state.data.length === 0 ? 3000 : false,
   });
 
   const createFileMutation = useMutation({
@@ -1094,14 +1098,17 @@ export default function Drive() {
           </div>
         ) : (folders?.length || 0) === 0 && visibleFiles.length === 0 ? (
           <div className="text-center py-16">
-            <FileIcon size={40} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 text-sm mb-1">
-              {isShared ? 'Nothing shared yet' : 'No files yet'}
-            </p>
-            {isPrivate && (
-              <p className="text-xs text-gray-400">
-                Create a file or use the AI chat to generate one
-              </p>
+            {isPrivate ? (
+              <>
+                <div className="w-8 h-8 mx-auto mb-3 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-500 text-sm mb-1">Setting up your workspace...</p>
+                <p className="text-xs text-gray-400">Your files will appear shortly</p>
+              </>
+            ) : (
+              <>
+                <FileIcon size={40} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500 text-sm mb-1">Nothing shared yet</p>
+              </>
             )}
           </div>
         ) : (

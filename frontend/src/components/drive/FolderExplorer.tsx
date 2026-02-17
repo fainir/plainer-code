@@ -618,18 +618,24 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
     }
   }, [isActive, filesFolderId, currentFolderId, navigateToRoot]);
 
-  // Fetch contents of Files folder
+  // Fetch contents of Files folder — poll every 3s when empty (workspace being set up)
   const { data: filesFiles } = useQuery({
     queryKey: ['drive-files', filesFolderId],
     queryFn: () => listFiles(filesFolderId!),
     enabled: isActive && !!filesFolderId,
+    refetchInterval: (query) =>
+      query.state.data && query.state.data.length === 0 ? 3000 : false,
   });
 
   const { data: filesFolders } = useQuery({
     queryKey: ['drive-folders', filesFolderId],
     queryFn: () => listFolders(filesFolderId!),
     enabled: isActive && !!filesFolderId,
+    refetchInterval: (query) =>
+      query.state.data && query.state.data.length === 0 ? 3000 : false,
   });
+
+  const isSettingUp = !!filesFolderId && filesFiles?.length === 0 && filesFolders?.length === 0;
 
   // Filter out instance files — they show nested under their source file
   const visibleFiles = filesFiles?.filter((f) => !f.is_instance) || [];
@@ -684,22 +690,31 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
       {open && (
         <div className="ml-2 pl-1">
-          <div className="space-y-0.5">
-            {filesFolders?.map((folder) => (
-              <FolderNode key={folder.id} folder={folder} depth={0} />
-            ))}
-            {visibleFiles.map((file) => (
-              <FileNode key={file.id} file={file} depth={0} />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={handleNewFile}
-            className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-100 transition"
-          >
-            <Plus size={11} />
-            <span>New</span>
-          </button>
+          {isSettingUp ? (
+            <div className="flex items-center gap-2 px-3 py-2 text-xs text-gray-400">
+              <div className="w-3 h-3 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin" />
+              <span>Setting up your workspace...</span>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-0.5">
+                {filesFolders?.map((folder) => (
+                  <FolderNode key={folder.id} folder={folder} depth={0} />
+                ))}
+                {visibleFiles.map((file) => (
+                  <FileNode key={file.id} file={file} depth={0} />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleNewFile}
+                className="w-full flex items-center gap-1.5 py-1 px-2 text-xs text-gray-400 hover:text-indigo-600 rounded hover:bg-gray-100 transition"
+              >
+                <Plus size={11} />
+                <span>New</span>
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

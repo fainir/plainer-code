@@ -70,21 +70,22 @@ function appTypeIcon(slug: string | null, size: number = 14) {
 }
 
 function treeFileIcon(fileType: string) {
+  const cls = "text-gray-400 shrink-0";
   switch (fileType) {
     case 'code':
-      return <FileCode size={14} className="text-emerald-500 shrink-0" />;
+      return <FileCode size={14} className={cls} />;
     case 'document':
-      return <FileText size={14} className="text-blue-600 shrink-0" />;
+      return <FileText size={14} className={cls} />;
     case 'image':
-      return <Image size={14} className="text-purple-500 shrink-0" />;
+      return <Image size={14} className={cls} />;
     case 'spreadsheet':
-      return <FileSpreadsheet size={14} className="text-green-600 shrink-0" />;
+      return <FileSpreadsheet size={14} className={cls} />;
     case 'pdf':
-      return <FileText size={14} className="text-red-500 shrink-0" />;
+      return <FileText size={14} className={cls} />;
     case 'view':
-      return <Eye size={14} className="text-violet-500 shrink-0" />;
+      return <Eye size={14} className={cls} />;
     default:
-      return <FileIcon size={14} className="text-gray-400 shrink-0" />;
+      return <FileIcon size={14} className={cls} />;
   }
 }
 

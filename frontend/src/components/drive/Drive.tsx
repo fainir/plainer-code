@@ -38,21 +38,22 @@ import { formatDistanceToNow } from 'date-fns';
 import { toggleFileFavorite } from '../../api/drive';
 
 function fileIcon(fileType: string) {
+  const cls = "text-gray-400";
   switch (fileType) {
     case 'code':
-      return <FileCode size={20} className="text-emerald-500" />;
+      return <FileCode size={20} className={cls} />;
     case 'document':
-      return <FileText size={20} className="text-blue-600" />;
+      return <FileText size={20} className={cls} />;
     case 'image':
-      return <Image size={20} className="text-purple-500" />;
+      return <Image size={20} className={cls} />;
     case 'spreadsheet':
-      return <FileSpreadsheet size={20} className="text-green-600" />;
+      return <FileSpreadsheet size={20} className={cls} />;
     case 'pdf':
-      return <FileText size={20} className="text-red-500" />;
+      return <FileText size={20} className={cls} />;
     case 'view':
-      return <Eye size={20} className="text-violet-500" />;
+      return <Eye size={20} className={cls} />;
     default:
-      return <FileIcon size={20} className="text-gray-400" />;
+      return <FileIcon size={20} className={cls} />;
   }
 }
 

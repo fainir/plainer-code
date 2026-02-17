@@ -91,7 +91,7 @@ function treeFileIcon(fileType: string) {
 
 function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number; siblingFiles: FileItem[] }) {
   const [expanded, setExpanded] = useState(false);
-  const { selectedFileId, selectFile } = useDriveStore();
+  const { selectedFileId, selectFile, setViewMode } = useDriveStore();
   const isActive = selectedFileId === file.id;
 
   // Data files: lazy-load instances via API
@@ -123,7 +123,6 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
   const expandedItems = file.is_instance
     ? relatedFiles
     : (instances || []).filter((i) => i.app_type_slug !== 'text-editor');
-  const hasItems = expanded && expandedItems.length > 0;
 
   return (
     <div>
@@ -169,31 +168,35 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
       {/* Related files nested underneath */}
       {expanded && (
         <div>
-          {hasItems ? (
-            expandedItems.map((rel) => (
-              <button
-                key={rel.id}
-                type="button"
-                onClick={() => selectFile(rel.id, rel.name, rel.is_instance ? 'instance' : rel.file_type)}
-                className={`w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition ${
-                  selectedFileId === rel.id
-                    ? 'bg-indigo-50 text-indigo-700 font-medium'
-                    : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50'
-                }`}
-                style={{ paddingLeft: `${depth * 16 + 42}px` }}
-              >
-                {rel.is_instance ? appTypeIcon(rel.app_type_slug, 11) : treeFileIcon(rel.file_type)}
-                <span className="truncate">{rel.name}</span>
-              </button>
-            ))
-          ) : (
-            <p
-              className="text-[11px] text-gray-400 italic py-0.5"
+          {/* Built-in Edit always first */}
+          <button
+            type="button"
+            onClick={() => {
+              selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type);
+              setViewMode('edit');
+            }}
+            className="w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
+            style={{ paddingLeft: `${depth * 16 + 42}px` }}
+          >
+            <Pencil size={11} className="text-gray-400 shrink-0" />
+            <span className="truncate">Edit</span>
+          </button>
+          {expandedItems.map((rel) => (
+            <button
+              key={rel.id}
+              type="button"
+              onClick={() => selectFile(rel.id, rel.name, rel.is_instance ? 'instance' : rel.file_type)}
+              className={`w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition ${
+                selectedFileId === rel.id
+                  ? 'bg-indigo-50 text-indigo-700 font-medium'
+                  : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50'
+              }`}
               style={{ paddingLeft: `${depth * 16 + 42}px` }}
             >
-              No related files
-            </p>
-          )}
+              {rel.is_instance ? appTypeIcon(rel.app_type_slug, 11) : treeFileIcon(rel.file_type)}
+              <span className="truncate">{rel.name}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>

@@ -660,6 +660,11 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
     // Instance rendering: use the source file's content with the app type's renderer
     if (isInstance && fileData) {
+      // Raw text edit mode (from sidebar "Edit" action)
+      if (viewMode === 'edit') {
+        return <RawViewer content={fileData.content || ''} isCode={false} />;
+      }
+
       // Edit mode for custom HTML views
       if (editMode && fileData.app_type_slug === 'custom-view') {
         return (

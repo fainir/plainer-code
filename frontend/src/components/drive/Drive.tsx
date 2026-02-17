@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance, updateFileContent } from '../../api/drive';
 import DocxViewer from './DocxViewer';
 import MarkdownEditor from './MarkdownEditor';
+import TableViewer from './csv/TableViewer';
+import KanbanViewer from './csv/KanbanViewer';
+import CalendarViewer from './csv/CalendarViewer';
 import { useDriveStore } from '../../stores/driveStore';
 import { useChatStore } from '../../stores/chatStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -103,45 +106,6 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// ── CSV Parser ──────────────────────────────────────────
-
-function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.trim().split('\n');
-  if (lines.length === 0) return { headers: [], rows: [] };
-
-  const parseLine = (line: string): string[] => {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (inQuotes) {
-        if (ch === '"' && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else if (ch === '"') {
-          inQuotes = false;
-        } else {
-          current += ch;
-        }
-      } else if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === ',') {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += ch;
-      }
-    }
-    result.push(current.trim());
-    return result;
-  };
-
-  const headers = parseLine(lines[0]);
-  const rows = lines.slice(1).filter((l) => l.trim()).map(parseLine);
-  return { headers, rows };
-}
-
 // ── Built-in Viewers ────────────────────────────────────
 
 function RawViewer({ content, isCode }: { content: string; isCode: boolean }) {
@@ -160,181 +124,6 @@ function RawViewer({ content, isCode }: { content: string; isCode: boolean }) {
   );
 }
 
-function TableViewer({ content }: { content: string }) {
-  const { headers, rows } = useMemo(() => parseCSV(content), [content]);
-
-  if (headers.length === 0) {
-    return <p className="text-sm text-gray-500">No data to display as table.</p>;
-  }
-
-  return (
-    <div className="border border-gray-200 rounded-lg overflow-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
-            {headers.map((h, i) => (
-              <th key={i} className="text-left px-3 py-2 font-semibold text-gray-700 whitespace-nowrap">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, ri) => (
-            <tr key={ri} className="border-b border-gray-100 hover:bg-gray-50/50">
-              {row.map((cell, ci) => (
-                <td key={ci} className="px-3 py-2 text-gray-800 whitespace-nowrap">
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function KanbanViewer({ content }: { content: string }) {
-  const { headers, rows } = useMemo(() => parseCSV(content), [content]);
-
-  const statusIdx = useMemo(() => {
-    const candidates = ['status', 'stage', 'state', 'column', 'category'];
-    const idx = headers.findIndex((h) =>
-      candidates.includes(h.toLowerCase())
-    );
-    return idx >= 0 ? idx : (headers.length > 1 ? 1 : 0);
-  }, [headers]);
-
-  const nameIdx = 0;
-
-  const columns = useMemo(() => {
-    const map = new Map<string, string[][]>();
-    for (const row of rows) {
-      const status = row[statusIdx] || 'Uncategorized';
-      if (!map.has(status)) map.set(status, []);
-      map.get(status)!.push(row);
-    }
-    return map;
-  }, [rows, statusIdx]);
-
-  if (headers.length === 0) {
-    return <p className="text-sm text-gray-500">No data to display as kanban.</p>;
-  }
-
-  return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
-      {Array.from(columns.entries()).map(([status, items]) => (
-        <div key={status} className="flex-shrink-0 w-64 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="px-3 py-2 border-b border-gray-200 bg-gray-100 rounded-t-lg">
-            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">
-              {status}
-              <span className="ml-1.5 text-gray-400 font-normal">{items.length}</span>
-            </h3>
-          </div>
-          <div className="p-2 space-y-2 max-h-[60vh] overflow-y-auto">
-            {items.map((row, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                <p className="text-sm font-medium text-gray-900">{row[nameIdx]}</p>
-                {headers.map((h, hi) => {
-                  if (hi === nameIdx || hi === statusIdx) return null;
-                  if (!row[hi]) return null;
-                  return (
-                    <p key={hi} className="text-xs text-gray-500 mt-1">
-                      <span className="font-medium">{h}:</span> {row[hi]}
-                    </p>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function CalendarViewer({ content }: { content: string }) {
-  const { headers, rows } = useMemo(() => parseCSV(content), [content]);
-
-  const dateIdx = useMemo(() => {
-    const candidates = ['date', 'due', 'due_date', 'start', 'start_date', 'created', 'deadline'];
-    const idx = headers.findIndex((h) =>
-      candidates.includes(h.toLowerCase().replace(/\s+/g, '_'))
-    );
-    return idx >= 0 ? idx : -1;
-  }, [headers]);
-
-  const nameIdx = 0;
-
-  const months = useMemo(() => {
-    if (dateIdx < 0) return new Map<string, { date: Date; row: string[] }[]>();
-    const map = new Map<string, { date: Date; row: string[] }[]>();
-    for (const row of rows) {
-      const d = new Date(row[dateIdx]);
-      if (isNaN(d.getTime())) continue;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push({ date: d, row });
-    }
-    for (const [, entries] of map) {
-      entries.sort((a, b) => a.date.getTime() - b.date.getTime());
-    }
-    return map;
-  }, [rows, dateIdx]);
-
-  if (dateIdx < 0) {
-    return (
-      <div className="text-center py-8">
-        <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
-        <p className="text-sm text-gray-500">No date column found in this file.</p>
-        <p className="text-xs text-gray-400 mt-1">
-          Add a column named "date", "due", or "deadline" to use calendar view.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {Array.from(months.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([monthKey, entries]) => {
-          const [year, month] = monthKey.split('-');
-          const monthName = new Date(Number(year), Number(month) - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
-          return (
-            <div key={monthKey}>
-              <h3 className="text-sm font-bold text-gray-700 mb-2">{monthName}</h3>
-              <div className="space-y-1">
-                {entries.map((entry, i) => (
-                  <div key={i} className="flex items-start gap-3 py-2 px-3 bg-white border border-gray-100 rounded-lg">
-                    <div className="text-center shrink-0 w-10">
-                      <div className="text-lg font-bold text-indigo-600">{entry.date.getDate()}</div>
-                      <div className="text-[10px] text-gray-400 uppercase">
-                        {entry.date.toLocaleString('default', { weekday: 'short' })}
-                      </div>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{entry.row[nameIdx]}</p>
-                      {headers.map((h, hi) => {
-                        if (hi === nameIdx || hi === dateIdx) return null;
-                        if (!entry.row[hi]) return null;
-                        return (
-                          <p key={hi} className="text-xs text-gray-500">
-                            <span className="font-medium">{h}:</span> {entry.row[hi]}
-                          </p>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-    </div>
-  );
-}
 
 function HtmlViewRenderer({ content, sourceData }: { content: string; sourceData?: string }) {
   const html = useMemo(() => {
@@ -381,11 +170,11 @@ function InstanceRenderer({
 
   switch (appTypeSlug) {
     case 'table':
-      return <TableViewer content={sourceContent} />;
+      return <TableViewer content={sourceContent} sourceFileId={fileId} fileName={fileName} />;
     case 'board':
-      return <KanbanViewer content={sourceContent} />;
+      return <KanbanViewer content={sourceContent} sourceFileId={fileId} fileName={fileName} />;
     case 'calendar':
-      return <CalendarViewer content={sourceContent} />;
+      return <CalendarViewer content={sourceContent} sourceFileId={fileId} fileName={fileName} />;
     case 'document': {
       const ext = fileName.split('.').pop()?.toLowerCase() || '';
       if (ext === 'doc' || ext === 'docx') {
@@ -727,16 +516,16 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
       return <DocxViewer fileId={fileId} content={fileData.content} fileName={actualName} />;
     }
     if (viewMode === 'table') {
-      return <TableViewer content={fileData.content} />;
+      return <TableViewer content={fileData.content} sourceFileId={fileId} fileName={actualName} />;
     }
     if (viewMode === 'document') {
       return <MarkdownEditor fileId={fileId} content={fileData.content} fileName={actualName} />;
     }
     if (viewMode === 'kanban') {
-      return <KanbanViewer content={fileData.content} />;
+      return <KanbanViewer content={fileData.content} sourceFileId={fileId} fileName={actualName} />;
     }
     if (viewMode === 'calendar') {
-      return <CalendarViewer content={fileData.content} />;
+      return <CalendarViewer content={fileData.content} sourceFileId={fileId} fileName={actualName} />;
     }
     if (viewMode === 'html-view') {
       return (

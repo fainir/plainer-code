@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -138,12 +138,15 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
         ) : (
           <span className="w-[15px] shrink-0" />
         )}
-        {treeFileIcon(file.file_type)}
+        {file.is_instance ? appTypeIcon(file.app_type_slug, 14) : treeFileIcon(file.file_type)}
         <span className="truncate flex-1">
           {splitFileName(file.name).base}
           <span className="text-[0.7em] opacity-40">{splitFileName(file.name).ext}</span>
         </span>
-        {file.is_vibe_file && (
+        {file.is_instance && (
+          <span className="text-[9px] text-violet-400 shrink-0">view</span>
+        )}
+        {file.is_vibe_file && !file.is_instance && (
           <Sparkles size={11} className="text-indigo-400 shrink-0" />
         )}
       </div>
@@ -200,8 +203,25 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
     enabled: expanded,
   });
 
-  // Filter out instance files — they show nested under their source file
-  const visibleFiles = childFiles?.filter((f) => !f.is_instance) || [];
+  // Sort: data files first, then their view instances grouped after each source
+  const sortedFiles = useMemo(() => {
+    if (!childFiles) return [];
+    const dataFiles = childFiles.filter((f) => !f.is_instance);
+    const bySource = new Map<string, FileItem[]>();
+    for (const f of childFiles.filter((f) => f.is_instance)) {
+      const key = f.source_file_id || '';
+      if (!bySource.has(key)) bySource.set(key, []);
+      bySource.get(key)!.push(f);
+    }
+    const result: FileItem[] = [];
+    for (const df of dataFiles) {
+      result.push(df);
+      const views = bySource.get(df.id);
+      if (views) { result.push(...views); bySource.delete(df.id); }
+    }
+    for (const views of bySource.values()) result.push(...views);
+    return result;
+  }, [childFiles]);
 
   return (
     <div>
@@ -249,7 +269,7 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
           {childFolders?.map((child) => (
             <FolderNode key={child.id} folder={child} depth={depth + 1} />
           ))}
-          {visibleFiles.map((file) => (
+          {sortedFiles.map((file) => (
             <FileNode key={file.id} file={file} depth={depth + 1} />
           ))}
         </>
@@ -637,8 +657,25 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
   const isSettingUp = !!filesFolderId && filesFiles?.length === 0 && filesFolders?.length === 0;
 
-  // Filter out instance files — they show nested under their source file
-  const visibleFiles = filesFiles?.filter((f) => !f.is_instance) || [];
+  // Sort: data files first, then their view instances grouped after each source
+  const visibleFiles = useMemo(() => {
+    if (!filesFiles) return [];
+    const dataFiles = filesFiles.filter((f) => !f.is_instance);
+    const bySource = new Map<string, FileItem[]>();
+    for (const f of filesFiles.filter((f) => f.is_instance)) {
+      const key = f.source_file_id || '';
+      if (!bySource.has(key)) bySource.set(key, []);
+      bySource.get(key)!.push(f);
+    }
+    const result: FileItem[] = [];
+    for (const df of dataFiles) {
+      result.push(df);
+      const views = bySource.get(df.id);
+      if (views) { result.push(...views); bySource.delete(df.id); }
+    }
+    for (const views of bySource.values()) result.push(...views);
+    return result;
+  }, [filesFiles]);
 
   async function handleNewFile() {
     if (!filesFolderId) return;
@@ -739,8 +776,7 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
   });
   const filesFolderId = drive?.files_folder_id;
 
-  // Filter out instance files
-  const visibleFiles = sharedFiles?.filter((f) => !f.is_instance) || [];
+  const visibleFiles = sharedFiles || [];
 
   async function handleNewFile() {
     if (!filesFolderId) return;

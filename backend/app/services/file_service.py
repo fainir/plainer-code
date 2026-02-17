@@ -286,7 +286,12 @@ async def create_instance(
 ) -> File:
     """Create an instance file for a data file using an app type."""
     base = source_file.name.rsplit(".", 1)[0] if "." in source_file.name else source_file.name
-    instance_name = name or f"{base} - {app_type.label}"
+    if name:
+        instance_name = name
+    elif app_type.renderer == "html-template":
+        instance_name = f"{base} {app_type.label}.html"
+    else:
+        instance_name = f"{base} {app_type.label}"
     instance_config = config or "{}"
 
     # For html-template renderers, store HTML content; for built-in, store config

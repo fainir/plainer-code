@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance } from '../../api/drive';
+import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance, updateFileContent } from '../../api/drive';
 import DocxViewer from './DocxViewer';
 import MarkdownEditor from './MarkdownEditor';
 import { useDriveStore } from '../../stores/driveStore';
@@ -53,6 +53,23 @@ function fileIcon(fileType: string) {
       return <Eye size={20} className="text-violet-500" />;
     default:
       return <FileIcon size={20} className="text-gray-400" />;
+  }
+}
+
+function appTypeIcon(slug: string | null, size: number = 20) {
+  switch (slug) {
+    case 'table':
+      return <Table size={size} className="text-green-600" />;
+    case 'board':
+      return <Columns3 size={size} className="text-blue-500" />;
+    case 'calendar':
+      return <Calendar size={size} className="text-orange-500" />;
+    case 'document':
+      return <FileText size={size} className="text-blue-600" />;
+    case 'text-editor':
+      return <Pencil size={size} className="text-gray-500" />;
+    default:
+      return <Eye size={size} className="text-violet-500" />;
   }
 }
 
@@ -500,6 +517,8 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
   const [showCustomViewDialog, setShowCustomViewDialog] = useState(false);
   const [customViewPrompt, setCustomViewPrompt] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [editContent, setEditContent] = useState('');
   const { setPendingPrompt } = useChatStore();
 
   const { data: fileData, isLoading, error } = useQuery({
@@ -535,6 +554,14 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
       queryClient.invalidateQueries({ queryKey: ['favorite-files'] });
       queryClient.invalidateQueries({ queryKey: ['shared-files'] });
+    },
+  });
+
+  const saveContentMutation = useMutation({
+    mutationFn: (content: string) => updateFileContent(fileId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['file-content', fileId] });
+      setEditMode(false);
     },
   });
 
@@ -613,6 +640,21 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
 
     // Instance rendering: use the source file's content with the app type's renderer
     if (isInstance && fileData) {
+      // Edit mode for custom HTML views
+      if (editMode && fileData.app_type_slug === 'custom-view') {
+        return (
+          <div className="h-full flex flex-col -m-5">
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="flex-1 p-5 text-sm text-gray-800 outline-none resize-none bg-white font-mono"
+              spellCheck={false}
+              aria-label="HTML source editor"
+            />
+          </div>
+        );
+      }
+
       // Wait for source file content to load
       if (sourceFileId && !sourceData) {
         return (
@@ -694,7 +736,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
             <ArrowLeft size={16} />
           </button>
           <div className="flex items-center gap-2 min-w-0">
-            {fileData && fileIcon(isInstance ? (detectedType) : detectedType)}
+            {fileData && (isInstance ? appTypeIcon(fileData.app_type_slug, 18) : fileIcon(detectedType))}
             <span className="text-sm font-semibold text-gray-900 truncate">
               {splitFileName(actualName).base}
               <span className="text-[0.8em] font-normal opacity-40">{splitFileName(actualName).ext}</span>
@@ -709,18 +751,52 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
             <Star size={14} className={favMutation.isPending ? 'text-gray-600' : fileData?.is_favorite ? 'text-amber-500 fill-amber-500' : 'text-gray-500 hover:text-amber-500'} />
           </button>
         </div>
-        <button
-          type="button"
-          onClick={toggleChatPanel}
-          className={`p-1.5 rounded-lg transition ${
-            chatPanelOpen
-              ? 'text-indigo-600 bg-indigo-50'
-              : 'text-gray-400 hover:bg-gray-100'
-          }`}
-          title="Toggle AI Chat"
-        >
-          <MessageSquare size={16} />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {/* Edit HTML button for custom view instances */}
+          {isInstance && fileData?.app_type_slug === 'custom-view' && fileData.content && (
+            editMode ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => saveContentMutation.mutate(editContent)}
+                  disabled={saveContentMutation.isPending}
+                  className="px-2.5 py-1 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                >
+                  {saveContentMutation.isPending ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditMode(false)}
+                  className="px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setEditContent(fileData.content || ''); setEditMode(true); }}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                title="Edit HTML source"
+              >
+                <FileCode size={13} />
+                <span>Edit HTML</span>
+              </button>
+            )
+          )}
+          <button
+            type="button"
+            onClick={toggleChatPanel}
+            className={`p-1.5 rounded-lg transition ${
+              chatPanelOpen
+                ? 'text-indigo-600 bg-indigo-50'
+                : 'text-gray-400 hover:bg-gray-100'
+            }`}
+            title="Toggle AI Chat"
+          >
+            <MessageSquare size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Instance tab bar — always visible */}
@@ -867,8 +943,25 @@ export default function Drive() {
     return <FileViewer fileId={selectedFileId} fileName={selectedFileName || ''} />;
   }
 
-  // Filter out instance files — they show nested under their source file
-  const visibleFiles = files?.filter((f) => !f.is_instance) || [];
+  // Sort: data files first, then their view instances grouped after each source
+  const visibleFiles = useMemo(() => {
+    if (!files) return [];
+    const dataFiles = files.filter((f) => !f.is_instance);
+    const bySource = new Map<string, FileItem[]>();
+    for (const f of files.filter((f) => f.is_instance)) {
+      const key = f.source_file_id || '';
+      if (!bySource.has(key)) bySource.set(key, []);
+      bySource.get(key)!.push(f);
+    }
+    const result: FileItem[] = [];
+    for (const df of dataFiles) {
+      result.push(df);
+      const views = bySource.get(df.id);
+      if (views) { result.push(...views); bySource.delete(df.id); }
+    }
+    for (const views of bySource.values()) result.push(...views);
+    return result;
+  }, [files]);
 
   const isLoading = filesLoading || foldersLoading;
 
@@ -1070,10 +1163,10 @@ export default function Drive() {
               <button
                 key={file.id}
                 type="button"
-                onClick={() => selectFile(file.id, file.name, file.file_type)}
+                onClick={() => selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type)}
                 className="flex items-center gap-2.5 px-3 py-2 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition min-w-0 shrink-0"
               >
-                {fileIcon(file.file_type)}
+                {file.is_instance ? appTypeIcon(file.app_type_slug, 18) : fileIcon(file.file_type)}
                 <div className="min-w-0 text-left">
                   <p className="text-xs text-gray-800 font-medium truncate max-w-[100px]">
                     {splitFileName(file.name).base}
@@ -1164,20 +1257,23 @@ export default function Drive() {
               {visibleFiles.map((file: FileItem) => (
                 <tr
                   key={file.id}
-                  onClick={() => selectFile(file.id, file.name, file.file_type)}
+                  onClick={() => selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type)}
                   className="border-b border-gray-200/50 hover:bg-gray-100/60 transition cursor-pointer"
                 >
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
-                      {fileIcon(file.file_type)}
+                      {file.is_instance ? appTypeIcon(file.app_type_slug) : fileIcon(file.file_type)}
                       <span className="text-sm text-gray-800">
                         {splitFileName(file.name).base}
                         <span className="text-[0.8em] font-normal opacity-40">{splitFileName(file.name).ext}</span>
                       </span>
+                      {file.is_instance && (
+                        <span className="text-[10px] text-violet-500 ml-0.5">view</span>
+                      )}
                       {file.is_favorite && (
                         <Star size={12} className="text-amber-400 fill-amber-400" />
                       )}
-                      {file.is_vibe_file && (
+                      {file.is_vibe_file && !file.is_instance && (
                         <Sparkles size={13} className="text-indigo-400" />
                       )}
                     </div>

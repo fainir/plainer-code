@@ -79,9 +79,9 @@ TOOLS = [
     {
         "name": "delete_file",
         "description": (
-            "Delete a file or instance from the workspace. This works for both data files "
-            "and instances. This is a soft delete. Use when the user asks to "
-            "delete, remove, or clear files or instances."
+            "Delete a file from the workspace. This works for both data files "
+            "and view files. This is a soft delete. Use when the user asks to "
+            "delete, remove, or clear files."
         ),
         "input_schema": {
             "type": "object",
@@ -97,11 +97,10 @@ TOOLS = [
     {
         "name": "create_instance",
         "description": (
-            "Create an instance of an app type for a data file. Instances are lightweight "
-            "views that render the data file using a specific app (Table, Board, Calendar, "
-            "Document, Text Editor, or a custom app). The instance appears nested under the "
-            "data file in the sidebar and as a tab when viewing the file. Use this when the "
-            "user wants a new way to view their data, e.g. 'show this CSV as a board'. "
+            "Create a view file for a data file. View files are visible in the folder listing "
+            "alongside the data file and render it using a specific app (Table, Board, Calendar, "
+            "Document, Text Editor, or a custom HTML view). Use this when the user wants a new "
+            "way to view their data, e.g. 'show this CSV as a board'. "
             "For multi-file views (e.g. dashboards), use source_file_ids to link the view "
             "to all relevant files."
         ),
@@ -132,7 +131,7 @@ TOOLS = [
                 },
                 "name": {
                     "type": "string",
-                    "description": "Optional custom name for the instance (defaults to 'FileName - AppLabel')",
+                    "description": "Optional custom name for the view file (defaults to 'FileName AppLabel' or 'FileName AppLabel.html' for custom views)",
                 },
                 "config": {
                     "type": "string",
@@ -184,10 +183,10 @@ TOOLS = [
     {
         "name": "update_instance",
         "description": (
-            "Update an instance's config or content. Use this to customize how an instance "
+            "Update a view file's config or content. Use this to customize how a view "
             "renders its data — e.g. changing column visibility, sort order, color coding, "
-            "or modifying the HTML template of a custom instance. Changes are saved to the "
-            "instance only, not the parent app type."
+            "or modifying the HTML of a custom view. Changes are saved to the "
+            "view file only, not the parent app type."
         ),
         "input_schema": {
             "type": "object",
@@ -211,10 +210,10 @@ TOOLS = [
     {
         "name": "promote_instance_to_app",
         "description": (
-            "Promote a customized instance into a new reusable app type. Takes the instance's "
+            "Promote a customized view file into a new reusable app type. Takes the view's "
             "current config/content and creates a new app type from it. The new app type appears "
             "in the Apps section and can be applied to other data files. Use this when the user "
-            "has customized an instance and wants to reuse that pattern elsewhere."
+            "has customized a view and wants to reuse that pattern elsewhere."
         ),
         "input_schema": {
             "type": "object",

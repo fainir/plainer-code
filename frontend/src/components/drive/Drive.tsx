@@ -615,7 +615,11 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
       </div>
 
       {/* Instance tab bar — always visible */}
-      <div className="relative flex items-center border-b border-gray-200 bg-gray-50 shrink-0">
+      <div className="border-b border-gray-200 bg-gray-50 shrink-0">
+        <div className="px-4 pt-2 pb-0.5 text-[11px] text-gray-400">
+          Views of <span className="font-medium text-gray-500">{isInstance && sourceData ? sourceData.name : actualName}</span>
+        </div>
+        <div className="relative flex items-center">
         <InstanceTabBar
           instances={siblingInstances || []}
           activeInstanceId={isInstance ? fileId : null}
@@ -626,6 +630,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
           fileType={detectedType}
           isAddingView={addViewMutation.isPending}
         />
+        </div>
       </div>
 
       {/* Custom view with AI dialog */}

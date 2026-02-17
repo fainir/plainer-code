@@ -11,7 +11,6 @@ import {
   FileCode,
   FileText,
   Image,
-  FileSpreadsheet,
   File as FileIcon,
   Folder as FolderIcon,
   Plus,
@@ -42,11 +41,11 @@ function fileIcon(fileType: string) {
     case 'code':
       return <FileCode size={20} className="text-emerald-500" />;
     case 'document':
-      return <FileText size={20} className="text-blue-500" />;
+      return <FileText size={20} className="text-blue-600" />;
     case 'image':
       return <Image size={20} className="text-purple-500" />;
     case 'spreadsheet':
-      return <FileSpreadsheet size={20} className="text-green-500" />;
+      return <Table size={20} className="text-green-600" />;
     case 'pdf':
       return <FileText size={20} className="text-red-500" />;
     case 'view':
@@ -336,10 +335,23 @@ function CalendarViewer({ content }: { content: string }) {
   );
 }
 
-function HtmlViewRenderer({ content }: { content: string }) {
+function HtmlViewRenderer({ content, sourceData }: { content: string; sourceData?: string }) {
+  const html = useMemo(() => {
+    if (!sourceData) return content;
+    // Inject source CSV data so HTML templates can access it via window.__SOURCE_CSV__
+    const script = `<script>window.__SOURCE_CSV__ = ${JSON.stringify(sourceData)};</script>`;
+    // Insert before the first <script> tag in the template
+    const idx = content.indexOf('<script');
+    if (idx >= 0) return content.slice(0, idx) + script + content.slice(idx);
+    // Fallback: insert before </body> or at end
+    const bodyIdx = content.indexOf('</body');
+    if (bodyIdx >= 0) return content.slice(0, bodyIdx) + script + content.slice(bodyIdx);
+    return content + script;
+  }, [content, sourceData]);
+
   return (
     <iframe
-      srcDoc={content}
+      srcDoc={html}
       sandbox="allow-scripts"
       className="w-full h-full border-0 rounded-lg bg-white"
       title="View renderer"
@@ -389,7 +401,7 @@ function InstanceRenderer({
       if (html) {
         return (
           <div className="h-full -m-5">
-            <HtmlViewRenderer content={html} />
+            <HtmlViewRenderer content={html} sourceData={sourceContent} />
           </div>
         );
       }

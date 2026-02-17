@@ -88,7 +88,8 @@ async def list_files(
     db: AsyncSession = Depends(get_db),
 ):
     drive = await file_service.get_user_drive(db, user.id)
-    return await file_service.list_drive_files(db, drive.id, folder_id)
+    files = await file_service.list_drive_files(db, drive.id, folder_id)
+    return [_file_response(f) for f in files]
 
 
 @router.post("/files", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
@@ -432,7 +433,8 @@ async def list_shared_with_me(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await file_service.list_shared_with_me(db, user.id)
+    files = await file_service.list_shared_with_me(db, user.id)
+    return [_file_response(f) for f in files]
 
 
 @router.get("/recent", response_model=list[FileResponse])
@@ -440,7 +442,8 @@ async def list_recent(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await file_service.list_recent_files(db, user.id)
+    files = await file_service.list_recent_files(db, user.id)
+    return [_file_response(f) for f in files]
 
 
 @router.post("/files/{file_id}/share", response_model=ShareResponse, status_code=status.HTTP_201_CREATED)

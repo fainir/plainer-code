@@ -404,6 +404,7 @@ async def list_shared_with_me(
 ) -> list[File]:
     result = await db.execute(
         select(File)
+        .options(selectinload(File.app_type))
         .join(FileShare, FileShare.file_id == File.id)
         .where(
             FileShare.shared_with_id == user_id,
@@ -426,6 +427,7 @@ async def list_recent_files(
 
     result = await db.execute(
         select(File)
+        .options(selectinload(File.app_type))
         .where(
             File.deleted_at.is_(None),
             or_(File.id.in_(owned), File.id.in_(shared)),

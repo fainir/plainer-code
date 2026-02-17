@@ -30,6 +30,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 async def _seed_in_background(workspace_id, owner_id, files_folder_id):
     """Run planner seeding in a background task so registration returns fast."""
+    logger.info("Starting background seed for user %s", owner_id)
     async with async_session() as db:
         try:
             storage = get_storage_backend()
@@ -37,6 +38,7 @@ async def _seed_in_background(workspace_id, owner_id, files_folder_id):
                 db, storage, workspace_id, owner_id, files_folder_id,
             )
             await db.commit()
+            logger.info("Background seed completed for user %s", owner_id)
         except Exception:
             logger.exception("Background seed failed for user %s", owner_id)
             await db.rollback()
@@ -60,6 +62,7 @@ async def register(
             files_folder = await ensure_system_folders(db, workspace.id, user.id)
             # Commit user + workspace + folders NOW so the background task can see them
             await db.commit()
+            logger.info("Scheduling background seed for user %s, workspace %s", user.id, workspace.id)
             background_tasks.add_task(
                 _seed_in_background, workspace.id, user.id, files_folder.id,
             )

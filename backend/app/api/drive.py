@@ -19,6 +19,7 @@ from app.schemas.file import (
     FolderResponse,
     InstanceConfigUpdate,
     InstanceCreate,
+    ReorderRequest,
     ShareRequest,
     ShareResponse,
 )
@@ -57,6 +58,7 @@ def _file_response(file) -> FileResponse:
         source_file_id=file.source_file_id,
         related_source_ids=file.related_source_ids,
         instance_config=file.instance_config,
+        sort_order=file.sort_order,
         created_at=file.created_at,
         updated_at=file.updated_at,
     )
@@ -504,3 +506,29 @@ async def list_messages(
     if conversation is None or conversation.workspace_id != drive.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     return await chat_service.get_conversation_messages(db, conversation_id)
+
+
+# ── Reorder ──────────────────────────────────────────────
+
+@router.put("/files/reorder")
+async def reorder_files(
+    data: ReorderRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    drive = await file_service.get_user_drive(db, user.id)
+    await file_service.reorder_files(db, drive.id, data.items)
+    await db.commit()
+    return {"ok": True}
+
+
+@router.put("/folders/reorder")
+async def reorder_folders(
+    data: ReorderRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    drive = await file_service.get_user_drive(db, user.id)
+    await file_service.reorder_folders(db, drive.id, data.items)
+    await db.commit()
+    return {"ok": True}

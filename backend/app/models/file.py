@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -48,6 +48,8 @@ class File(UUIDMixin, TimestampMixin, Base):
         ARRAY(UUID(as_uuid=True)), nullable=True
     )
     instance_config: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    sort_order: Mapped[int] = mapped_column(SmallInteger, default=0, server_default="0")
 
     owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id])
     workspace: Mapped["Workspace"] = relationship("Workspace")

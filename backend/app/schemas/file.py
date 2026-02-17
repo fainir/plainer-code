@@ -28,6 +28,7 @@ class FileResponse(BaseModel):
     source_file_id: uuid.UUID | None = None
     related_source_ids: list[uuid.UUID] | None = None
     instance_config: str | None = None
+    sort_order: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -64,6 +65,7 @@ class FolderResponse(BaseModel):
     name: str
     path: str
     is_favorite: bool
+    sort_order: int = 0
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -127,3 +129,12 @@ class InstanceCreate(BaseModel):
 
 class InstanceConfigUpdate(BaseModel):
     config: str
+
+
+class ReorderItem(BaseModel):
+    id: uuid.UUID
+    sort_order: int
+
+
+class ReorderRequest(BaseModel):
+    items: list[ReorderItem]

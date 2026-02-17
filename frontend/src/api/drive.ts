@@ -166,6 +166,16 @@ export async function uploadFile(file: File, folderId?: string) {
   return res.data as FileItem;
 }
 
+// ── Reorder ───────────────────────────────────────────
+
+export async function reorderFiles(items: { id: string; sort_order: number }[]) {
+  await api.put('/drive/files/reorder', { items });
+}
+
+export async function reorderFolders(items: { id: string; sort_order: number }[]) {
+  await api.put('/drive/folders/reorder', { items });
+}
+
 export async function updateFileContent(fileId: string, content: string) {
   const res = await api.put(`/drive/files/${fileId}/content`, { content });
   return res.data as {

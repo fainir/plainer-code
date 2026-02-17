@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, SmallInteger, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,6 +25,7 @@ class Folder(UUIDMixin, TimestampMixin, Base):
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
+    sort_order: Mapped[int] = mapped_column(SmallInteger, default=0, server_default="0")
 
     owner: Mapped["User"] = relationship("User", foreign_keys=[owner_id])
     workspace: Mapped["Workspace"] = relationship("Workspace")

@@ -34,6 +34,7 @@ export interface FileItem {
   source_file_id: string | null;
   related_source_ids: string[] | null;
   instance_config: string | null;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +57,7 @@ export interface FolderItem {
   name: string;
   path: string;
   is_favorite: boolean;
+  sort_order: number;
   created_at: string;
 }
 

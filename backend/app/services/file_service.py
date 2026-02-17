@@ -376,7 +376,7 @@ async def list_drive_files(
     else:
         query = query.where(File.folder_id.is_(None))
 
-    query = query.order_by(File.name)
+    query = query.order_by(File.sort_order, File.name)
     result = await db.execute(query)
     return list(result.scalars().all())
 
@@ -504,9 +504,43 @@ async def list_drive_folders(
         query = query.where(Folder.parent_id == parent_id)
     else:
         query = query.where(Folder.parent_id.is_(None))
-    query = query.order_by(Folder.name)
+    query = query.order_by(Folder.sort_order, Folder.name)
     result = await db.execute(query)
     return list(result.scalars().all())
+
+
+async def reorder_files(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    items: list,
+) -> None:
+    """Batch-update sort_order for files."""
+    ids = [item.id for item in items]
+    result = await db.execute(
+        select(File).where(File.id.in_(ids), File.workspace_id == workspace_id)
+    )
+    files_by_id = {f.id: f for f in result.scalars().all()}
+    for item in items:
+        f = files_by_id.get(item.id)
+        if f:
+            f.sort_order = item.sort_order
+
+
+async def reorder_folders(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    items: list,
+) -> None:
+    """Batch-update sort_order for folders."""
+    ids = [item.id for item in items]
+    result = await db.execute(
+        select(Folder).where(Folder.id.in_(ids), Folder.workspace_id == workspace_id)
+    )
+    folders_by_id = {f.id: f for f in result.scalars().all()}
+    for item in items:
+        f = folders_by_id.get(item.id)
+        if f:
+            f.sort_order = item.sort_order
 
 
 async def get_or_create_system_folder(
@@ -1320,13 +1354,14 @@ async def seed_default_planner_content(
             created_by_id=source.created_by_id,
         )
 
-    for planner_name, files_spec, extra_views, dashboard_html in [
+    for sort_idx, (planner_name, files_spec, extra_views, dashboard_html) in enumerate([
         ("Personal Planner", _PERSONAL_PLANNER_FILES, _PERSONAL_EXTRA_VIEWS, _PERSONAL_DASHBOARD_HTML),
         ("Company Planner", _COMPANY_PLANNER_FILES, _COMPANY_EXTRA_VIEWS, _COMPANY_DASHBOARD_HTML),
-    ]:
+    ]):
         folder = await create_folder(
             db, workspace_id, owner_id, planner_name, parent_id=files_folder_id,
         )
+        folder.sort_order = sort_idx
 
         all_objects: list[File] = []
 

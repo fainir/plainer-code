@@ -1,6 +1,8 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance, updateFileContent } from '../../api/drive';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
+import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance, updateFileContent, reorderFiles, reorderFolders } from '../../api/drive';
 import DocxViewer from './DocxViewer';
 import MarkdownEditor from './MarkdownEditor';
 import TableViewer from './csv/TableViewer';
@@ -818,6 +820,29 @@ export default function Drive() {
   // text-editor is built-in edit mode, not a separate view file
   const visibleFiles = (files || []).filter((f) => !(f.is_instance && f.app_type_slug === 'text-editor'));
 
+  const handleTableDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) return;
+
+    if (source.droppableId === 'table-folders' && destination.droppableId === 'table-folders') {
+      const items = [...(folders || [])];
+      const [moved] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, moved);
+      queryClient.setQueryData(['drive-folders', currentFolderId], items);
+      reorderFolders(items.map((f, i) => ({ id: f.id, sort_order: i })));
+    } else if (source.droppableId === 'table-files' && destination.droppableId === 'table-files') {
+      const items = [...visibleFiles];
+      const [moved] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, moved);
+      const hidden = (files || []).filter((f) => f.is_instance && f.app_type_slug === 'text-editor');
+      queryClient.setQueryData(
+        isShared ? ['shared-files'] : ['drive-files', currentFolderId],
+        [...items, ...hidden],
+      );
+      reorderFiles(items.map((f, i) => ({ id: f.id, sort_order: i })));
+    }
+  }, [folders, visibleFiles, files, currentFolderId, isShared, queryClient]);
+
   // File viewer mode (must be after all hooks)
   if (selectedFileId) {
     return <FileViewer fileId={selectedFileId} fileName={selectedFileName || ''} />;
@@ -1065,94 +1090,124 @@ export default function Drive() {
             )}
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5">
-                  Name
-                </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5 hidden md:table-cell">
-                  Owner
-                </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5">
-                  Date modified
-                </th>
-                <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5 hidden md:table-cell">
-                  File size
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {isPrivate &&
-                folders?.map((folder: FolderItem) => (
-                  <tr
-                    key={folder.id}
-                    onClick={() => navigateToFolder(folder.id, folder.name)}
-                    className="border-b border-gray-200/50 hover:bg-gray-100/60 transition cursor-pointer"
-                  >
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-3">
-                        <FolderIcon size={18} className="text-amber-400 shrink-0" />
-                        <span className="text-sm text-gray-800">
-                          {folder.name}
-                        </span>
-                        {folder.is_favorite && (
-                          <Star size={12} className="text-amber-400 fill-amber-400" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 hidden md:table-cell">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] text-white font-medium shrink-0">me</div>
-                        <span className="text-sm text-gray-400">me</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 text-sm text-gray-400">
-                      {formatDistanceToNow(new Date(folder.created_at), { addSuffix: true })}
-                    </td>
-                    <td className="px-4 py-2.5 text-sm text-gray-500 hidden md:table-cell">—</td>
-                  </tr>
-                ))}
-
-              {visibleFiles.map((file: FileItem) => (
-                <tr
-                  key={file.id}
-                  onClick={() => selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type)}
-                  className="border-b border-gray-200/50 hover:bg-gray-100/60 transition cursor-pointer"
-                >
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-3">
-                      {file.is_instance ? appTypeIcon(file.app_type_slug) : fileIcon(file.file_type)}
-                      <span className="text-sm text-gray-800">
-                        {splitFileName(file.name).base}
-                        <span className="text-[0.8em] font-normal opacity-40">{splitFileName(file.name).ext}</span>
-                      </span>
-                      {file.is_favorite && (
-                        <Star size={12} className="text-amber-400 fill-amber-400" />
-                      )}
-                      {file.is_vibe_file && !file.is_instance && (
-                        <Sparkles size={13} className="text-indigo-400" />
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5 hidden md:table-cell">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] text-white font-medium shrink-0">me</div>
-                      <span className="text-sm text-gray-400">me</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5 text-sm text-gray-400">
-                    {formatDistanceToNow(new Date(file.updated_at), {
-                      addSuffix: true,
-                    })}
-                  </td>
-                  <td className="px-4 py-2.5 text-sm text-gray-400 hidden md:table-cell">
-                    {formatSize(file.size_bytes)}
-                  </td>
+          <DragDropContext onDragEnd={handleTableDragEnd}>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5">
+                    Name
+                  </th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5 hidden md:table-cell">
+                    Owner
+                  </th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5">
+                    Date modified
+                  </th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-2.5 hidden md:table-cell">
+                    File size
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              {isPrivate && (
+                <Droppable droppableId="table-folders">
+                  {(provided) => (
+                    <tbody ref={provided.innerRef} {...provided.droppableProps}>
+                      {folders?.map((folder: FolderItem, index: number) => (
+                        <Draggable key={folder.id} draggableId={`tf-${folder.id}`} index={index}>
+                          {(prov, snapshot) => (
+                            <tr
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              {...prov.dragHandleProps}
+                              onClick={() => navigateToFolder(folder.id, folder.name)}
+                              className={`border-b border-gray-200/50 hover:bg-gray-100/60 transition cursor-pointer ${
+                                snapshot.isDragging ? 'bg-indigo-50 shadow-sm' : ''
+                              }`}
+                            >
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-3">
+                                  <FolderIcon size={18} className="text-amber-400 shrink-0" />
+                                  <span className="text-sm text-gray-800">
+                                    {folder.name}
+                                  </span>
+                                  {folder.is_favorite && (
+                                    <Star size={12} className="text-amber-400 fill-amber-400" />
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 hidden md:table-cell">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] text-white font-medium shrink-0">me</div>
+                                  <span className="text-sm text-gray-400">me</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 text-sm text-gray-400">
+                                {formatDistanceToNow(new Date(folder.created_at), { addSuffix: true })}
+                              </td>
+                              <td className="px-4 py-2.5 text-sm text-gray-500 hidden md:table-cell">—</td>
+                            </tr>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </tbody>
+                  )}
+                </Droppable>
+              )}
+              <Droppable droppableId="table-files">
+                {(provided) => (
+                  <tbody ref={provided.innerRef} {...provided.droppableProps}>
+                    {visibleFiles.map((file: FileItem, index: number) => (
+                      <Draggable key={file.id} draggableId={`tf-${file.id}`} index={index}>
+                        {(prov, snapshot) => (
+                          <tr
+                            ref={prov.innerRef}
+                            {...prov.draggableProps}
+                            {...prov.dragHandleProps}
+                            onClick={() => selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type)}
+                            className={`border-b border-gray-200/50 hover:bg-gray-100/60 transition cursor-pointer ${
+                              snapshot.isDragging ? 'bg-indigo-50 shadow-sm' : ''
+                            }`}
+                          >
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-3">
+                                {file.is_instance ? appTypeIcon(file.app_type_slug) : fileIcon(file.file_type)}
+                                <span className="text-sm text-gray-800">
+                                  {splitFileName(file.name).base}
+                                  <span className="text-[0.8em] font-normal opacity-40">{splitFileName(file.name).ext}</span>
+                                </span>
+                                {file.is_favorite && (
+                                  <Star size={12} className="text-amber-400 fill-amber-400" />
+                                )}
+                                {file.is_vibe_file && !file.is_instance && (
+                                  <Sparkles size={13} className="text-indigo-400" />
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 hidden md:table-cell">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] text-white font-medium shrink-0">me</div>
+                                <span className="text-sm text-gray-400">me</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 text-sm text-gray-400">
+                              {formatDistanceToNow(new Date(file.updated_at), {
+                                addSuffix: true,
+                              })}
+                            </td>
+                            <td className="px-4 py-2.5 text-sm text-gray-400 hidden md:table-cell">
+                              {formatSize(file.size_bytes)}
+                            </td>
+                          </tr>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </tbody>
+                )}
+              </Droppable>
+            </table>
+          </DragDropContext>
         )}
       </div>
     </div>

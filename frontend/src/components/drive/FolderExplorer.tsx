@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
 import {
   getMyDrive,
   listFolders,
@@ -13,6 +15,8 @@ import {
   getFileInstances,
   createFile,
   uploadFile,
+  reorderFiles,
+  reorderFolders,
 } from '../../api/drive';
 import { useDriveStore } from '../../stores/driveStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -442,6 +446,7 @@ function AppTypeNode({ slug, label }: { slug: string; label: string }) {
                 }`}
                 style={{ paddingLeft: '42px' }}
               >
+                {appTypeIcon(inst.app_type_slug, 11)}
                 <span className="truncate">{inst.name}</span>
               </button>
             ))
@@ -670,6 +675,26 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
   // text-editor is built-in edit mode, not a separate view file
   const visibleFiles = (filesFiles || []).filter((f) => !(f.is_instance && f.app_type_slug === 'text-editor'));
 
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) return;
+
+    if (source.droppableId === 'sidebar-folders' && destination.droppableId === 'sidebar-folders') {
+      const items = [...(filesFolders || [])];
+      const [moved] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, moved);
+      queryClient.setQueryData(['drive-folders', filesFolderId], items);
+      reorderFolders(items.map((f, i) => ({ id: f.id, sort_order: i })));
+    } else if (source.droppableId === 'sidebar-files' && destination.droppableId === 'sidebar-files') {
+      const items = [...visibleFiles];
+      const [moved] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, moved);
+      const hidden = (filesFiles || []).filter((f) => f.is_instance && f.app_type_slug === 'text-editor');
+      queryClient.setQueryData(['drive-files', filesFolderId], [...items, ...hidden]);
+      reorderFiles(items.map((f, i) => ({ id: f.id, sort_order: i })));
+    }
+  }, [filesFolders, visibleFiles, filesFiles, filesFolderId, queryClient]);
+
   async function handleNewFile() {
     if (!filesFolderId) return;
     try {
@@ -727,14 +752,50 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
             </div>
           ) : (
             <>
-              <div className="space-y-0.5">
-                {filesFolders?.map((folder) => (
-                  <FolderNode key={folder.id} folder={folder} depth={0} />
-                ))}
-                {visibleFiles.map((file) => (
-                  <FileNode key={file.id} file={file} depth={0} siblingFiles={visibleFiles} />
-                ))}
-              </div>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="sidebar-folders">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-0.5">
+                      {filesFolders?.map((folder, index) => (
+                        <Draggable key={folder.id} draggableId={`sf-${folder.id}`} index={index}>
+                          {(prov, snapshot) => (
+                            <div
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              {...prov.dragHandleProps}
+                              className={snapshot.isDragging ? 'opacity-80 bg-white rounded shadow-sm' : ''}
+                            >
+                              <FolderNode folder={folder} depth={0} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+                <Droppable droppableId="sidebar-files">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-0.5">
+                      {visibleFiles.map((file, index) => (
+                        <Draggable key={file.id} draggableId={`sf-${file.id}`} index={index}>
+                          {(prov, snapshot) => (
+                            <div
+                              ref={prov.innerRef}
+                              {...prov.draggableProps}
+                              {...prov.dragHandleProps}
+                              className={snapshot.isDragging ? 'opacity-80 bg-white rounded shadow-sm' : ''}
+                            >
+                              <FileNode file={file} depth={0} siblingFiles={visibleFiles} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
               <button
                 type="button"
                 onClick={handleNewFile}

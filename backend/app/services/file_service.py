@@ -1013,9 +1013,7 @@ async def _resolve_app_type(
 ) -> "AppType | None":
     """Get an app type by slug — installing it from the marketplace if needed."""
     import json
-    import logging
     from app.models.marketplace import MarketplaceItem
-    _log = logging.getLogger(__name__)
 
     # Built-in or already-installed
     app_type = await get_app_type_by_slug(db, slug, workspace_id)
@@ -1027,7 +1025,6 @@ async def _resolve_app_type(
         select(MarketplaceItem).where(MarketplaceItem.slug == slug)
     )
     item = result.scalar_one_or_none()
-    _log.warning("_resolve_app_type: slug=%s, found_item=%s, has_content=%s", slug, item is not None, bool(item.content) if item else False)
     if item and item.content:
         # Content may be JSON ({"template_html": "..."}) or raw HTML
         try:

@@ -13,9 +13,9 @@ export default function Sidebar() {
   const [showApiKey, setShowApiKey] = useState(false);
 
   const navItems = [
-    { label: 'My Drive', icon: HardDrive, path: '/drive' },
-    { label: 'Shared with me', icon: Users, path: '/drive/shared' },
-    { label: 'Recent', icon: Clock, path: '/drive/recent' },
+    { label: 'My Drive', icon: HardDrive, path: '/private' },
+    { label: 'Shared with me', icon: Users, path: '/shared' },
+    { label: 'Recent', icon: Clock, path: '/private' },
   ];
 
   return (

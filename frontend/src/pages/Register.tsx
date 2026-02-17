@@ -20,7 +20,7 @@ export default function Register() {
       await register(email, password, displayName);
       const tokens = await login(email, password);
       authLogin(tokens.access_token, tokens.refresh_token);
-      navigate('/drive');
+      navigate('/private');
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||

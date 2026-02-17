@@ -24,11 +24,10 @@ export function useDriveURL() {
   useEffect(() => {
     const path = location.pathname;
 
-    if (path.startsWith('/drive/file/') && params.fileId) {
-      // File URL — fetch file info and select it
+    if (path.startsWith('/file/') && params.fileId) {
       const fId = params.fileId;
       const state = useDriveStore.getState();
-      if (state.selectedFileId === fId) return; // already there
+      if (state.selectedFileId === fId) return;
 
       getFileContent(fId)
         .then((file) => {
@@ -36,26 +35,28 @@ export function useDriveURL() {
           setFromURL(null, fId, file.name, fileType || null, 'private');
         })
         .catch(() => {
-          // File not found — go to drive root
-          navigate('/drive', { replace: true });
+          navigate('/private', { replace: true });
         });
-    } else if (path.startsWith('/drive/folder/') && params.folderId) {
-      // Folder URL — set folder ID
+    } else if (path.startsWith('/folder/') && params.folderId) {
       const fId = params.folderId;
       const state = useDriveStore.getState();
       if (state.currentFolderId === fId && !state.selectedFileId) return;
 
       setFromURL(fId, null, null, null, 'private');
-    } else if (path === '/drive/shared') {
+    } else if (path === '/shared') {
       const state = useDriveStore.getState();
       if (state.view === 'shared' && !state.selectedFileId) return;
 
       setView('shared');
-    } else if (path === '/drive') {
-      // Root — only reset if we haven't initialised yet
+    } else if (path === '/private') {
+      const state = useDriveStore.getState();
+      if (state.view === 'private' && !state.selectedFileId && !state.currentFolderId) return;
       if (!initialised.current) {
+        // First load on /private — let the existing init logic handle it
         initialised.current = true;
+        return;
       }
+      setFromURL(null, null, null, null, 'private');
     }
 
     initialised.current = true;
@@ -68,17 +69,16 @@ export function useDriveURL() {
     // Skip if this state change came from URL parsing
     if (state._fromURL) return;
 
-    let targetPath = '/drive';
+    let targetPath = '/private';
 
     if (selectedFileId) {
-      targetPath = `/drive/file/${selectedFileId}`;
+      targetPath = `/file/${selectedFileId}`;
     } else if (view === 'shared') {
-      targetPath = '/drive/shared';
+      targetPath = '/shared';
     } else if (currentFolderId) {
-      targetPath = `/drive/folder/${currentFolderId}`;
+      targetPath = `/folder/${currentFolderId}`;
     }
 
-    // Only update if different from current
     if (location.pathname !== targetPath) {
       navigate(targetPath, { replace: true });
     }

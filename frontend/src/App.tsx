@@ -35,12 +35,12 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/drive" element={<ProtectedDrive />} />
-      <Route path="/drive/shared" element={<ProtectedDrive />} />
-      <Route path="/drive/folder/:folderId" element={<ProtectedDrive />} />
-      <Route path="/drive/file/:fileId" element={<ProtectedDrive />} />
-      <Route path="/" element={<Navigate to={isAuthenticated ? '/drive' : '/login'} replace />} />
-      <Route path="*" element={<Navigate to={isAuthenticated ? '/drive' : '/login'} replace />} />
+      <Route path="/private" element={<ProtectedDrive />} />
+      <Route path="/shared" element={<ProtectedDrive />} />
+      <Route path="/folder/:folderId" element={<ProtectedDrive />} />
+      <Route path="/file/:fileId" element={<ProtectedDrive />} />
+      <Route path="/" element={<Navigate to={isAuthenticated ? '/private' : '/login'} replace />} />
+      <Route path="*" element={<Navigate to={isAuthenticated ? '/private' : '/login'} replace />} />
     </Routes>
   );
 }

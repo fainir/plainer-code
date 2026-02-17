@@ -18,7 +18,7 @@ export default function Login() {
     try {
       const tokens = await login(email, password);
       authLogin(tokens.access_token, tokens.refresh_token);
-      navigate('/drive');
+      navigate('/private');
     } catch {
       setError('Invalid email or password');
     } finally {

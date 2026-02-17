@@ -1,7 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.dependencies import get_storage
+from app.filestore.base import StorageBackend
+from app.models.workspace import Workspace
 from app.schemas.user import TokenRefresh, TokenResponse, UserCreate, UserLogin, UserResponse
 from app.services.auth_service import (
     authenticate_user,
@@ -9,17 +15,41 @@ from app.services.auth_service import (
     create_refresh_token,
     register_user,
 )
+from app.services.file_service import (
+    ensure_system_folders,
+    seed_default_planner_content,
+)
 from app.config import settings
 
 import jwt as pyjwt
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(
+    data: UserCreate,
+    db: AsyncSession = Depends(get_db),
+    storage: StorageBackend = Depends(get_storage),
+):
     try:
         user = await register_user(db, data.email, data.password, data.display_name)
+
+        # Seed default planner folders for new user
+        try:
+            ws = await db.execute(
+                select(Workspace).where(Workspace.owner_id == user.id)
+            )
+            workspace = ws.scalar_one()
+            files_folder = await ensure_system_folders(db, workspace.id, user.id)
+            await seed_default_planner_content(
+                db, storage, workspace.id, user.id, files_folder.id,
+            )
+        except Exception:
+            logger.exception("Failed to seed default planner content for user %s", user.id)
+
         await db.commit()
         return user
     except ValueError as e:

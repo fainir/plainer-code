@@ -63,6 +63,8 @@ function appTypeIcon(slug: string | null, size: number = 14) {
       return <FileText size={size} className="text-blue-600 shrink-0" />;
     case 'text-editor':
       return <Pencil size={size} className="text-gray-500 shrink-0" />;
+    case 'custom-view':
+      return <Sparkles size={size} className="text-amber-500 shrink-0" />;
     default:
       return <Eye size={size} className="text-violet-500 shrink-0" />;
   }

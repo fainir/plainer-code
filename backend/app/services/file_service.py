@@ -295,9 +295,10 @@ async def create_instance(
     instance_config = config or "{}"
 
     # For html-template renderers, store HTML content; for built-in, store config
-    if app_type.renderer == "html-template" and content:
-        content_text = content
-        store_bytes = content.encode("utf-8")
+    html = content or (app_type.template_content if app_type.renderer == "html-template" else None)
+    if app_type.renderer == "html-template" and html:
+        content_text = html
+        store_bytes = html.encode("utf-8")
         mime = "text/html"
     else:
         content_text = None

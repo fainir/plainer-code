@@ -152,11 +152,13 @@ async def get_file_content(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Content not found")
 
     slug = file.app_type.slug if file.is_instance and file.app_type else None
+    template = file.app_type.template_content if file.is_instance and file.app_type else None
     return FileContentResponse(
         id=file.id, name=file.name, content=content, mime_type=file.mime_type,
         is_favorite=file.is_favorite, is_instance=file.is_instance,
         app_type_slug=slug, source_file_id=file.source_file_id,
         instance_config=file.instance_config,
+        template_content=template,
     )
 
 

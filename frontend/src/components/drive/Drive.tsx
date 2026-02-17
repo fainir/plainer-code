@@ -68,6 +68,8 @@ function appTypeIcon(slug: string | null, size: number = 20) {
       return <FileText size={size} className="text-blue-600" />;
     case 'text-editor':
       return <Pencil size={size} className="text-gray-500" />;
+    case 'custom-view':
+      return <Sparkles size={size} className="text-amber-500" />;
     default:
       return <Eye size={size} className="text-violet-500" />;
   }
@@ -351,12 +353,14 @@ function InstanceRenderer({
   appTypeSlug,
   sourceContent,
   instanceContent,
+  templateContent,
   fileId,
   fileName,
 }: {
   appTypeSlug: string | null;
   sourceContent: string;
   instanceContent: string | null;
+  templateContent: string | null;
   fileId: string;
   fileName: string;
 }) {
@@ -379,16 +383,18 @@ function InstanceRenderer({
     case 'text-editor':
       return <RawViewer content={sourceContent} isCode={isCode} />;
     case 'custom-view':
-    default:
-      // Custom HTML template — render instance content (HTML) in iframe
-      if (instanceContent && instanceContent !== '{}') {
+    default: {
+      // Custom HTML template — prefer instance content, fall back to app type template
+      const html = (instanceContent && instanceContent !== '{}') ? instanceContent : templateContent;
+      if (html) {
         return (
           <div className="h-full -m-5">
-            <HtmlViewRenderer content={instanceContent} />
+            <HtmlViewRenderer content={html} />
           </div>
         );
       }
       return <RawViewer content={sourceContent} isCode={isCode} />;
+    }
   }
 }
 
@@ -401,6 +407,7 @@ function appTypeToIcon(slug: string | null, size: number = 14) {
     case 'calendar': return <Calendar size={size} />;
     case 'document': return <FileType size={size} />;
     case 'text-editor': return <Pencil size={size} />;
+    case 'custom-view': return <Sparkles size={size} />;
     default: return <Eye size={size} />;
   }
 }
@@ -671,6 +678,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
           appTypeSlug={fileData.app_type_slug}
           sourceContent={content}
           instanceContent={fileData.content}
+          templateContent={fileData.template_content}
           fileId={sourceFileId || fileId}
           fileName={sourceData?.name || actualName}
         />

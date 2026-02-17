@@ -48,6 +48,7 @@ class FileContentResponse(BaseModel):
     app_type_slug: str | None = None
     source_file_id: uuid.UUID | None = None
     instance_config: str | None = None
+    template_content: str | None = None
 
 
 class FolderCreate(BaseModel):

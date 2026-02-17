@@ -34,6 +34,7 @@ export async function getFileContent(fileId: string) {
     app_type_slug: string | null;
     source_file_id: string | null;
     instance_config: string | null;
+    template_content: string | null;
   };
 }
 

@@ -590,14 +590,15 @@ function FavoritesSection() {
           ))}
           {favFiles?.map((file) => {
             const isActive = selectedFileId === file.id;
+            const fileType = file.is_instance ? 'instance' : file.file_type;
             return (
               <div
                 key={file.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => selectFile(file.id, file.name, file.file_type)}
+                onClick={() => selectFile(file.id, file.name, fileType)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, file.file_type);
+                  if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, fileType);
                 }}
                 className={`w-full flex items-center gap-1.5 py-1 px-2 text-sm rounded transition cursor-pointer ${
                   isActive
@@ -606,7 +607,7 @@ function FavoritesSection() {
                 }`}
                 style={{ paddingLeft: '8px' }}
               >
-                {treeFileIcon(file.file_type)}
+                {file.is_instance ? appTypeIcon(file.app_type_slug, 14) : treeFileIcon(file.file_type)}
                 <span className="truncate flex-1">
                   {splitFileName(file.name).base}
                   <span className="text-[0.7em] opacity-40">{splitFileName(file.name).ext}</span>

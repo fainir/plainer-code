@@ -1,11 +1,11 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
-from app.dependencies import get_storage
+from app.database import async_session, get_db
+from app.dependencies import get_storage, get_storage_backend
 from app.filestore.base import StorageBackend
 from app.models.workspace import Workspace
 from app.schemas.user import TokenRefresh, TokenResponse, UserCreate, UserLogin, UserResponse
@@ -28,29 +28,42 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+async def _seed_in_background(workspace_id, owner_id, files_folder_id):
+    """Run planner seeding in a background task so registration returns fast."""
+    async with async_session() as db:
+        try:
+            storage = get_storage_backend()
+            await seed_default_planner_content(
+                db, storage, workspace_id, owner_id, files_folder_id,
+            )
+            await db.commit()
+        except Exception:
+            logger.exception("Background seed failed for user %s", owner_id)
+            await db.rollback()
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     data: UserCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    storage: StorageBackend = Depends(get_storage),
 ):
     try:
         user = await register_user(db, data.email, data.password, data.display_name)
 
-        # Seed default planner folders for new user
+        # Create system folders synchronously (fast), seed content in background
         try:
             ws = await db.execute(
                 select(Workspace).where(Workspace.owner_id == user.id)
             )
             workspace = ws.scalar_one()
             files_folder = await ensure_system_folders(db, workspace.id, user.id)
-            await seed_default_planner_content(
-                db, storage, workspace.id, user.id, files_folder.id,
+            background_tasks.add_task(
+                _seed_in_background, workspace.id, user.id, files_folder.id,
             )
         except Exception:
-            logger.exception("Failed to seed default planner content for user %s", user.id)
+            logger.exception("Failed to set up folders for user %s", user.id)
 
-        await db.commit()
         return user
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

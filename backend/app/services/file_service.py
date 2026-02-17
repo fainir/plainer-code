@@ -986,25 +986,62 @@ _COMPANY_PLANNER_FILES = [
 ]
 
 # Map file names to the custom views (instances) that should be created for them.
+# Slugs starting with "app-" are marketplace apps that get auto-installed.
 _PERSONAL_VIEWS: dict[str, list[str]] = {
     "weekly-plan.csv": ["table", "board", "calendar"],
-    "habits.csv": ["table"],
-    "goals.csv": ["table"],
-    "budget.csv": ["table"],
+    "habits.csv": ["table", "app-habit-tracker"],
+    "goals.csv": ["table", "app-okr-tracker"],
+    "budget.csv": ["table", "app-line-chart"],
     "reading-list.csv": ["table"],
     "notes.md": ["document"],
 }
 
 _COMPANY_VIEWS: dict[str, list[str]] = {
-    "project-board.csv": ["table", "board", "calendar"],
+    "project-board.csv": ["table", "board", "app-sprint-board"],
     "team.csv": ["table"],
-    "okrs.csv": ["table"],
-    "roadmap.csv": ["table"],
+    "okrs.csv": ["table", "app-okr-tracker"],
+    "roadmap.csv": ["table", "app-roadmap"],
     "meeting-notes.md": ["document"],
-    "kpis.csv": ["table"],
-    "budget.csv": ["table"],
+    "kpis.csv": ["table", "app-kpi-dashboard"],
+    "budget.csv": ["table", "app-line-chart"],
     "notes.md": ["document"],
 }
+
+
+async def _resolve_app_type(
+    db: AsyncSession, slug: str, workspace_id: uuid.UUID
+) -> "AppType | None":
+    """Get an app type by slug — installing it from the marketplace if needed."""
+    import json
+    from app.models.marketplace import MarketplaceItem
+
+    # Built-in or already-installed
+    app_type = await get_app_type_by_slug(db, slug, workspace_id)
+    if app_type:
+        return app_type
+
+    # Try installing from marketplace
+    result = await db.execute(
+        select(MarketplaceItem).where(MarketplaceItem.slug == slug)
+    )
+    item = result.scalar_one_or_none()
+    if item and item.content:
+        content_data = json.loads(item.content)
+        app_type = await create_app_type(
+            db=db,
+            workspace_id=workspace_id,
+            slug=content_data.get("slug", slug),
+            label=content_data.get("label", item.name),
+            icon=content_data.get("icon", item.icon),
+            renderer="html-template",
+            template_content=content_data.get("template_html", ""),
+            description=content_data.get("description", item.description),
+        )
+        item.install_count += 1
+        await db.flush()
+        return app_type
+
+    return None
 
 
 async def seed_default_planner_content(
@@ -1030,7 +1067,7 @@ async def seed_default_planner_content(
             )
             slugs = views_spec.get(spec["name"], [])
             for slug in slugs:
-                app_type = await get_app_type_by_slug(db, slug, workspace_id)
+                app_type = await _resolve_app_type(db, slug, workspace_id)
                 if app_type:
                     await create_instance(db, storage, file, app_type)
             # Always add text-editor

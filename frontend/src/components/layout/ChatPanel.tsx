@@ -330,16 +330,19 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
         </div>
       </div>
 
-      {/* API key banner */}
+      {/* API key hint — small, inline, non-blocking */}
       {!user?.has_api_key && (
-        <button
-          type="button"
-          onClick={() => setShowApiKey(true)}
-          className="mx-4 mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700 hover:bg-amber-100 transition"
-        >
-          <Key size={14} />
-          Add your Anthropic API key to enable AI chat
-        </button>
+        <div className="mx-4 mt-2 flex items-center gap-1.5 px-2 py-1 text-xs text-gray-400">
+          <Key size={12} />
+          <button
+            type="button"
+            onClick={() => setShowApiKey(true)}
+            className="underline hover:text-gray-600 transition"
+          >
+            Add API key
+          </button>
+          <span>to enable AI</span>
+        </div>
       )}
 
       {/* Disconnected banner */}

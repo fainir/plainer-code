@@ -183,7 +183,8 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
 }
 
 function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
-  const [expanded, setExpanded] = useState(false);
+  const isPlannerFolder = folder.name === 'Personal Planner' || folder.name === 'Company Planner';
+  const [expanded, setExpanded] = useState(isPlannerFolder);
   const { currentFolderId, navigateToFolder } = useDriveStore();
   const isActive = currentFolderId === folder.id;
 

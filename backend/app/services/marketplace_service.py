@@ -166,12 +166,20 @@ async def install_app(
     item: MarketplaceItem,
     workspace_id: uuid.UUID,
 ) -> dict:
-    content_data = json.loads(item.content)
-    slug = content_data.get("slug", item.slug)
-    label = content_data.get("label", item.name)
-    icon = content_data.get("icon", item.icon)
-    template_html = content_data.get("template_html", "")
-    description = content_data.get("description", item.description)
+    # Content may be JSON ({"template_html": "..."}) or raw HTML
+    try:
+        content_data = json.loads(item.content)
+        slug = content_data.get("slug", item.slug)
+        label = content_data.get("label", item.name)
+        icon = content_data.get("icon", item.icon)
+        template_html = content_data.get("template_html", "")
+        description = content_data.get("description", item.description)
+    except (json.JSONDecodeError, TypeError):
+        slug = item.slug
+        label = item.name
+        icon = item.icon
+        template_html = item.content or ""
+        description = item.description
 
     # Check if already installed
     existing = await file_service.get_app_type_by_slug(db, slug, workspace_id)

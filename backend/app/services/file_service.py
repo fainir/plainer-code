@@ -1026,16 +1026,30 @@ async def _resolve_app_type(
     )
     item = result.scalar_one_or_none()
     if item and item.content:
-        content_data = json.loads(item.content)
+        # Content may be JSON ({"template_html": "..."}) or raw HTML
+        try:
+            content_data = json.loads(item.content)
+            template_html = content_data.get("template_html", "")
+            app_slug = content_data.get("slug", slug)
+            app_label = content_data.get("label", item.name)
+            app_icon = content_data.get("icon", item.icon)
+            app_desc = content_data.get("description", item.description)
+        except (json.JSONDecodeError, TypeError):
+            template_html = item.content
+            app_slug = slug
+            app_label = item.name
+            app_icon = item.icon
+            app_desc = item.description
+
         app_type = await create_app_type(
             db=db,
             workspace_id=workspace_id,
-            slug=content_data.get("slug", slug),
-            label=content_data.get("label", item.name),
-            icon=content_data.get("icon", item.icon),
+            slug=app_slug,
+            label=app_label,
+            icon=app_icon,
             renderer="html-template",
-            template_content=content_data.get("template_html", ""),
-            description=content_data.get("description", item.description),
+            template_content=template_html,
+            description=app_desc,
         )
         item.install_count += 1
         await db.flush()

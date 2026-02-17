@@ -69,9 +69,8 @@ function appTypeIcon(slug: string | null, size: number = 20) {
     case 'text-editor':
       return <Pencil size={size} className="text-gray-500" />;
     case 'custom-view':
-      return <Sparkles size={size} className="text-amber-500" />;
     default:
-      return <Eye size={size} className="text-violet-500" />;
+      return <Sparkles size={size} className="text-amber-500" />;
   }
 }
 
@@ -420,8 +419,8 @@ function appTypeToIcon(slug: string | null, size: number = 14) {
     case 'calendar': return <Calendar size={size} />;
     case 'document': return <FileType size={size} />;
     case 'text-editor': return <Pencil size={size} />;
-    case 'custom-view': return <Sparkles size={size} />;
-    default: return <Eye size={size} />;
+    case 'custom-view':
+    default: return <Sparkles size={size} />;
   }
 }
 

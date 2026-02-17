@@ -12,6 +12,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function ProtectedDrive() {
+  return (
+    <ProtectedRoute>
+      <DriveLayout />
+    </ProtectedRoute>
+  );
+}
+
 export default function App() {
   const { isAuthenticated, setUser } = useAuthStore();
 
@@ -27,14 +35,10 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route
-        path="/drive/*"
-        element={
-          <ProtectedRoute>
-            <DriveLayout />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/drive" element={<ProtectedDrive />} />
+      <Route path="/drive/shared" element={<ProtectedDrive />} />
+      <Route path="/drive/folder/:folderId" element={<ProtectedDrive />} />
+      <Route path="/drive/file/:fileId" element={<ProtectedDrive />} />
       <Route path="/" element={<Navigate to={isAuthenticated ? '/drive' : '/login'} replace />} />
       <Route path="*" element={<Navigate to={isAuthenticated ? '/drive' : '/login'} replace />} />
     </Routes>

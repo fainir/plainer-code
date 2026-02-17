@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { getMyDrive } from '../api/drive';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useDriveURL } from '../hooks/useDriveURL';
 import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
 import FolderExplorer from '../components/drive/FolderExplorer';
@@ -20,6 +21,7 @@ function ResizeHandle() {
 }
 
 export default function DriveLayout() {
+  useDriveURL();
   const { chatPanelOpen } = useUIStore();
   const user = useAuthStore((s) => s.user);
 

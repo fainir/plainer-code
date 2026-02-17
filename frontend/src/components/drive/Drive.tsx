@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listFiles, createFile, listFolders, createFolder, listSharedWithMe, getFileContent, getFileInstances, uploadFile, createInstance, updateFileContent } from '../../api/drive';
 import DocxViewer from './DocxViewer';
@@ -108,16 +108,73 @@ function formatSize(bytes: number) {
 
 // ── Built-in Viewers ────────────────────────────────────
 
-function RawViewer({ content, isCode }: { content: string; isCode: boolean }) {
+function RawViewer({ content, isCode, fileId }: { content: string; isCode: boolean; fileId?: string }) {
   const [editContent, setEditContent] = useState(content);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'saving'>('saved');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queryClient = useQueryClient();
+  const contentRef = useRef(editContent);
+  contentRef.current = editContent;
+
+  const saveMutation = useMutation({
+    mutationFn: (text: string) => updateFileContent(fileId!, text),
+    onMutate: () => setSaveStatus('saving'),
+    onSuccess: () => {
+      setSaveStatus('saved');
+      queryClient.invalidateQueries({ queryKey: ['file-content', fileId] });
+    },
+    onError: () => setSaveStatus('unsaved'),
+  });
+
+  const scheduleSave = useCallback(() => {
+    if (!fileId) return;
+    setSaveStatus('unsaved');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      saveMutation.mutate(contentRef.current);
+    }, 2000);
+  }, [fileId, saveMutation]);
+
+  useEffect(() => {
+    if (!fileId) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        saveMutation.mutate(contentRef.current);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [fileId, saveMutation]);
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditContent(e.target.value);
+    if (fileId) scheduleSave();
+  };
 
   return (
     <div className="h-full flex flex-col -m-5">
+      {fileId && (
+        <div className="flex items-center justify-end px-4 py-1 border-b border-gray-100 bg-gray-50/50 shrink-0">
+          <span className={`text-xs ${
+            saveStatus === 'saving' ? 'text-amber-500' :
+            saveStatus === 'unsaved' ? 'text-orange-500' :
+            'text-gray-400'
+          }`}>
+            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'unsaved' ? 'Unsaved changes' : 'All changes saved'}
+          </span>
+        </div>
+      )}
       <textarea
         value={editContent}
-        onChange={(e) => setEditContent(e.target.value)}
-        className={`flex-1 p-5 text-sm text-gray-800 outline-none resize-none bg-white ${isCode ? 'font-mono' : ''}`}
-        spellCheck={!isCode}
+        onChange={handleChange}
+        className={`flex-1 p-5 text-sm text-gray-800 outline-none resize-none bg-white ${isCode || fileId ? 'font-mono' : ''}`}
+        spellCheck={!isCode && !fileId}
         aria-label="File content editor"
       />
     </div>
@@ -451,7 +508,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
     if (isInstance && fileData) {
       // Raw text edit mode (from sidebar "Edit" action)
       if (viewMode === 'edit') {
-        return <RawViewer content={fileData.content || ''} isCode={false} />;
+        return <RawViewer content={fileData.content || ''} isCode={true} fileId={fileId} />;
       }
 
       // Edit mode for custom HTML views

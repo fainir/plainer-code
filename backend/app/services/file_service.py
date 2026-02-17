@@ -288,10 +288,8 @@ async def create_instance(
     base = source_file.name.rsplit(".", 1)[0] if "." in source_file.name else source_file.name
     if name:
         instance_name = name
-    elif app_type.renderer == "html-template":
-        instance_name = f"{base} {app_type.label}.html"
     else:
-        instance_name = f"{base} {app_type.label}"
+        instance_name = f"{base} {app_type.label}.html"
     instance_config = config or "{}"
 
     # For html-template renderers, store HTML content; for built-in, store config

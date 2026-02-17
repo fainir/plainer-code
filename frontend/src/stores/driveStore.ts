@@ -26,6 +26,7 @@ interface DriveState {
   selectedFileName: string | null;
   selectedFileType: string | null;
   viewMode: FileViewMode;
+  _fromURL: boolean; // flag to prevent URL sync loops
   setView: (view: DriveView) => void;
   navigateToFolder: (folderId: string, folderName: string) => void;
   navigateToBreadcrumb: (index: number) => void;
@@ -33,6 +34,7 @@ interface DriveState {
   selectFile: (fileId: string, fileName: string, fileType?: string) => void;
   clearSelectedFile: () => void;
   setViewMode: (mode: FileViewMode) => void;
+  setFromURL: (folderId: string | null, fileId: string | null, fileName: string | null, fileType: string | null, view: DriveView) => void;
 }
 
 export type { FileViewMode };
@@ -45,6 +47,7 @@ export const useDriveStore = create<DriveState>((set) => ({
   selectedFileName: null,
   selectedFileType: null,
   viewMode: 'edit',
+  _fromURL: false,
 
   setView: (view) =>
     set({
@@ -54,6 +57,7 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
+      _fromURL: false,
       breadcrumbs: [{ id: null, name: view === 'shared' ? 'Shared' : 'Private' }],
     }),
 
@@ -64,6 +68,7 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
+      _fromURL: false,
       breadcrumbs: [...s.breadcrumbs, { id: folderId, name: folderName }],
     })),
 
@@ -74,6 +79,7 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
+      _fromURL: false,
       breadcrumbs: s.breadcrumbs.slice(0, index + 1),
     })),
 
@@ -85,6 +91,7 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
+      _fromURL: false,
       breadcrumbs: [{ id: homeFolderId || null, name: 'Private' }],
     }),
 
@@ -94,6 +101,7 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: fileName,
       selectedFileType: fileType || null,
       viewMode: getDefaultViewMode(fileName, fileType || undefined),
+      _fromURL: false,
     }),
 
   clearSelectedFile: () =>
@@ -102,8 +110,22 @@ export const useDriveStore = create<DriveState>((set) => ({
       selectedFileName: null,
       selectedFileType: null,
       viewMode: 'edit',
+      _fromURL: false,
     }),
 
   setViewMode: (mode) =>
     set({ viewMode: mode }),
+
+  // Called only by useDriveURL to set state from URL without triggering URL update
+  setFromURL: (folderId, fileId, fileName, fileType, view) =>
+    set({
+      view,
+      currentFolderId: folderId,
+      selectedFileId: fileId,
+      selectedFileName: fileName,
+      selectedFileType: fileType,
+      viewMode: fileId && fileName ? getDefaultViewMode(fileName, fileType || undefined) : 'edit',
+      _fromURL: true,
+      breadcrumbs: [{ id: null, name: view === 'shared' ? 'Shared' : 'Private' }],
+    }),
 }));

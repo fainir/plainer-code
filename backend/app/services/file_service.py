@@ -1209,85 +1209,7 @@ _COMPANY_PLANNER_FILES = [
     },
 ]
 
-# Map file names to the default view created at seed time.
-# Only 1 built-in view per file for fast onboarding.
-# Users can add board/calendar/marketplace views later.
-_PERSONAL_VIEWS: dict[str, list[str]] = {
-    "weekly-plan.csv": ["table"],
-    "habits.csv": ["table"],
-    "goals.csv": ["table"],
-    "budget.csv": ["table"],
-    "fitness.csv": ["table"],
-    "reading-list.csv": ["table"],
-    "projects.csv": ["table"],
-    "journal.md": ["document"],
-    "notes.md": ["document"],
-}
 
-_COMPANY_VIEWS: dict[str, list[str]] = {
-    "project-board.csv": ["table"],
-    "team.csv": ["table"],
-    "okrs.csv": ["table"],
-    "roadmap.csv": ["table"],
-    "kpis.csv": ["table"],
-    "clients.csv": ["table"],
-    "budget.csv": ["table"],
-    "retrospective.csv": ["table"],
-    "meeting-notes.md": ["document"],
-    "notes.md": ["document"],
-}
-
-
-
-
-async def _resolve_app_type(
-    db: AsyncSession, slug: str, workspace_id: uuid.UUID
-) -> "AppType | None":
-    """Get an app type by slug — installing it from the marketplace if needed."""
-    import json
-    from app.models.marketplace import MarketplaceItem
-
-    # Built-in or already-installed
-    app_type = await get_app_type_by_slug(db, slug, workspace_id)
-    if app_type:
-        return app_type
-
-    # Try installing from marketplace
-    result = await db.execute(
-        select(MarketplaceItem).where(MarketplaceItem.slug == slug)
-    )
-    item = result.scalar_one_or_none()
-    if item and item.content:
-        # Content may be JSON ({"template_html": "..."}) or raw HTML
-        try:
-            content_data = json.loads(item.content)
-            template_html = content_data.get("template_html", "")
-            app_slug = content_data.get("slug", slug)
-            app_label = content_data.get("label", item.name)
-            app_icon = content_data.get("icon", item.icon)
-            app_desc = content_data.get("description", item.description)
-        except (json.JSONDecodeError, TypeError):
-            template_html = item.content
-            app_slug = slug
-            app_label = item.name
-            app_icon = item.icon
-            app_desc = item.description
-
-        app_type = await create_app_type(
-            db=db,
-            workspace_id=workspace_id,
-            slug=app_slug,
-            label=app_label,
-            icon=app_icon,
-            renderer="html-template",
-            template_content=template_html,
-            description=app_desc,
-        )
-        item.install_count += 1
-        await db.flush()
-        return app_type
-
-    return None
 
 
 async def seed_default_planner_content(
@@ -1297,75 +1219,17 @@ async def seed_default_planner_content(
     owner_id: uuid.UUID,
     files_folder_id: uuid.UUID,
 ) -> None:
-    """Create Personal Planner and Company Planner folders with example files and views.
+    """Create Personal Planner and Company Planner using the same mechanism
+    as marketplace folder templates (create_file_from_content + auto_create_instances)."""
+    from app.services.marketplace_service import _create_structure_recursive
 
-    Optimised for speed: skips S3 writes (content_text is read first by
-    get_file_content) and skips FileVersion rows for seed data.  All objects
-    are added to the session and flushed in bulk.
-    """
-
-    # Pre-resolve the 2 built-in app types we need (table + document)
-    _app_cache: dict[str, AppType | None] = {}
-    for slug in ("table", "document"):
-        _app_cache[slug] = await get_app_type_by_slug(db, slug, workspace_id)
-
-    def _make_file(folder_id: uuid.UUID, name: str, content: str) -> File:
-        mime = detect_mime_type(name)
-        return File(
-            owner_id=owner_id,
-            workspace_id=workspace_id,
-            folder_id=folder_id,
-            name=name,
-            mime_type=mime,
-            size_bytes=len(content.encode("utf-8")),
-            storage_key=f"{workspace_id}/seed/{uuid.uuid4()}/{name}",
-            file_type=detect_file_type(mime, name),
-            content_text=content,
-            is_vibe_file=False,
-            created_by_id=owner_id,
-            created_by_agent=False,
-        )
-
-    def _make_instance(source: File, app_type: AppType) -> File:
-        base = source.name.rsplit(".", 1)[0] if "." in source.name else source.name
-        inst_name = f"{base} {app_type.label}"
-        return File(
-            owner_id=owner_id,
-            workspace_id=workspace_id,
-            folder_id=source.folder_id,
-            name=inst_name,
-            mime_type="application/json",
-            size_bytes=2,
-            storage_key=f"{workspace_id}/seed/{uuid.uuid4()}/{inst_name}",
-            file_type="instance",
-            content_text=None,
-            is_instance=True,
-            app_type_id=app_type.id,
-            source_file_id=source.id,
-            instance_config="{}",
-            is_vibe_file=False,
-            created_by_id=owner_id,
-            created_by_agent=False,
-        )
-
-    for planner_name, files_spec, views_spec in [
-        ("Personal Planner", _PERSONAL_PLANNER_FILES, _PERSONAL_VIEWS),
-        ("Company Planner", _COMPANY_PLANNER_FILES, _COMPANY_VIEWS),
+    for planner_name, files_spec in [
+        ("Personal Planner", _PERSONAL_PLANNER_FILES),
+        ("Company Planner", _COMPANY_PLANNER_FILES),
     ]:
         folder = await create_folder(db, workspace_id, owner_id, planner_name, parent_id=files_folder_id)
-
-        # Batch-create all data files (no S3, no FileVersion)
-        data_files: list[File] = []
-        for spec in files_spec:
-            f = _make_file(folder.id, spec["name"], spec["content"])
-            db.add(f)
-            data_files.append(f)
-        await db.flush()  # single flush → all files get IDs
-
-        # Batch-create all view instances
-        for f in data_files:
-            for slug in views_spec.get(f.name, []):
-                app_type = _app_cache.get(slug)
-                if app_type:
-                    db.add(_make_instance(f, app_type))
-        await db.flush()  # single flush → all instances created
+        structure = [
+            {"type": "file", "name": spec["name"], "content": spec["content"]}
+            for spec in files_spec
+        ]
+        await _create_structure_recursive(db, storage, workspace_id, owner_id, folder.id, structure)

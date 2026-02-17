@@ -132,7 +132,7 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
             ? 'bg-indigo-50 text-indigo-700 font-medium'
             : 'text-gray-700 hover:bg-gray-100'
         }`}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        style={{ paddingLeft: `${depth * 16 + 28}px` }}
         role="button"
         tabIndex={0}
         onClick={() => selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type)}
@@ -176,7 +176,7 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
               setViewMode('edit');
             }}
             className="w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
-            style={{ paddingLeft: `${depth * 16 + 42}px` }}
+            style={{ paddingLeft: `${depth * 16 + 46}px` }}
           >
             <Pencil size={11} className="text-gray-400 shrink-0" />
             <span className="truncate">Edit</span>
@@ -191,7 +191,7 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
                   ? 'bg-indigo-50 text-indigo-700 font-medium'
                   : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50'
               }`}
-              style={{ paddingLeft: `${depth * 16 + 42}px` }}
+              style={{ paddingLeft: `${depth * 16 + 46}px` }}
             >
               {rel.is_instance ? appTypeIcon(rel.app_type_slug, 11) : treeFileIcon(rel.file_type)}
               <span className="truncate">{rel.name}</span>

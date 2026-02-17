@@ -2,9 +2,9 @@ import { useState, useMemo } from 'react';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, format, isSameMonth, isToday,
-  isSameDay, addMonths, subMonths,
+  addMonths, subMonths,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Trash2 } from 'lucide-react';
 import { useCSVEditor, detectDateColumn } from './csvUtils';
 
 interface CalendarViewerProps {

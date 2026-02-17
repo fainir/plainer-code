@@ -958,25 +958,7 @@ export default function Drive() {
     e.target.value = '';
   };
 
-  // Sort: data files first, then their view instances grouped after each source
-  const visibleFiles = useMemo(() => {
-    if (!files) return [];
-    const dataFiles = files.filter((f) => !f.is_instance);
-    const bySource = new Map<string, FileItem[]>();
-    for (const f of files.filter((f) => f.is_instance)) {
-      const key = f.source_file_id || '';
-      if (!bySource.has(key)) bySource.set(key, []);
-      bySource.get(key)!.push(f);
-    }
-    const result: FileItem[] = [];
-    for (const df of dataFiles) {
-      result.push(df);
-      const views = bySource.get(df.id);
-      if (views) { result.push(...views); bySource.delete(df.id); }
-    }
-    for (const views of bySource.values()) result.push(...views);
-    return result;
-  }, [files]);
+  const visibleFiles = files || [];
 
   // File viewer mode (must be after all hooks)
   if (selectedFileId) {
@@ -1287,9 +1269,6 @@ export default function Drive() {
                         {splitFileName(file.name).base}
                         <span className="text-[0.8em] font-normal opacity-40">{splitFileName(file.name).ext}</span>
                       </span>
-                      {file.is_instance && (
-                        <span className="text-[10px] text-violet-500 ml-0.5">view</span>
-                      )}
                       {file.is_favorite && (
                         <Star size={12} className="text-amber-400 fill-amber-400" />
                       )}

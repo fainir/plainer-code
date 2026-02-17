@@ -88,20 +88,38 @@ function treeFileIcon(fileType: string) {
   }
 }
 
-function FileNode({ file, depth }: { file: FileItem; depth: number }) {
+function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number; siblingFiles: FileItem[] }) {
   const [expanded, setExpanded] = useState(false);
   const { selectedFileId, selectFile } = useDriveStore();
   const isActive = selectedFileId === file.id;
 
-  // Lazy-load instances when expanded (only for non-instance files)
+  // Data files: lazy-load instances via API
   const { data: instances } = useQuery({
     queryKey: ['file-instances', file.id],
     queryFn: () => getFileInstances(file.id),
     enabled: expanded && !file.is_instance,
   });
 
-  const hasInstances = expanded && instances && instances.length > 0;
-  const hasExpandButton = !file.is_instance;
+  // Instance files: find source data file(s) from siblings
+  const relatedFiles = useMemo(() => {
+    if (!file.is_instance || !expanded) return [];
+    const related: FileItem[] = [];
+    if (file.source_file_id) {
+      const source = siblingFiles.find((f) => f.id === file.source_file_id);
+      if (source) related.push(source);
+    }
+    if (file.related_source_ids) {
+      for (const rid of file.related_source_ids) {
+        if (rid === file.source_file_id) continue;
+        const r = siblingFiles.find((f) => f.id === rid);
+        if (r) related.push(r);
+      }
+    }
+    return related;
+  }, [file, expanded, siblingFiles]);
+
+  const expandedItems = file.is_instance ? relatedFiles : (instances || []);
+  const hasItems = expanded && expandedItems.length > 0;
 
   return (
     <div>
@@ -119,57 +137,49 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
           if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type);
         }}
       >
-        {/* Expand arrow on the left — only for data files, not instances */}
-        {hasExpandButton ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded(!expanded);
-            }}
-            className={`p-0.5 rounded shrink-0 transition ${
-              expanded
-                ? 'text-gray-500'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-            title={expanded ? 'Hide instances' : 'Show instances'}
-          >
-            {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
-          </button>
-        ) : (
-          <span className="w-[15px] shrink-0" />
-        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
+          className={`p-0.5 rounded shrink-0 transition ${
+            expanded
+              ? 'text-gray-500'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+          title={expanded ? 'Hide related files' : 'Show related files'}
+        >
+          {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+        </button>
         {file.is_instance ? appTypeIcon(file.app_type_slug, 14) : treeFileIcon(file.file_type)}
         <span className="truncate flex-1">
           {splitFileName(file.name).base}
           <span className="text-[0.7em] opacity-40">{splitFileName(file.name).ext}</span>
         </span>
-        {file.is_instance && (
-          <span className="text-[9px] text-violet-400 shrink-0">view</span>
-        )}
         {file.is_vibe_file && !file.is_instance && (
           <Sparkles size={11} className="text-indigo-400 shrink-0" />
         )}
       </div>
 
-      {/* Instances nested underneath */}
+      {/* Related files nested underneath */}
       {expanded && (
         <div>
-          {hasInstances ? (
-            instances.map((inst) => (
+          {hasItems ? (
+            expandedItems.map((rel) => (
               <button
-                key={inst.id}
+                key={rel.id}
                 type="button"
-                onClick={() => selectFile(inst.id, inst.name, 'instance')}
+                onClick={() => selectFile(rel.id, rel.name, rel.is_instance ? 'instance' : rel.file_type)}
                 className={`w-full flex items-center gap-1.5 py-0.5 px-2 text-xs rounded transition ${
-                  selectedFileId === inst.id
+                  selectedFileId === rel.id
                     ? 'bg-indigo-50 text-indigo-700 font-medium'
                     : 'text-gray-500 hover:text-indigo-600 hover:bg-indigo-50'
                 }`}
                 style={{ paddingLeft: `${depth * 16 + 42}px` }}
               >
-                {appTypeIcon(inst.app_type_slug, 11)}
-                <span className="truncate">{inst.name}</span>
+                {rel.is_instance ? appTypeIcon(rel.app_type_slug, 11) : treeFileIcon(rel.file_type)}
+                <span className="truncate">{rel.name}</span>
               </button>
             ))
           ) : (
@@ -177,7 +187,7 @@ function FileNode({ file, depth }: { file: FileItem; depth: number }) {
               className="text-[11px] text-gray-400 italic py-0.5"
               style={{ paddingLeft: `${depth * 16 + 42}px` }}
             >
-              No instances
+              No related files
             </p>
           )}
         </div>
@@ -204,25 +214,7 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
     enabled: expanded,
   });
 
-  // Sort: data files first, then their view instances grouped after each source
-  const sortedFiles = useMemo(() => {
-    if (!childFiles) return [];
-    const dataFiles = childFiles.filter((f) => !f.is_instance);
-    const bySource = new Map<string, FileItem[]>();
-    for (const f of childFiles.filter((f) => f.is_instance)) {
-      const key = f.source_file_id || '';
-      if (!bySource.has(key)) bySource.set(key, []);
-      bySource.get(key)!.push(f);
-    }
-    const result: FileItem[] = [];
-    for (const df of dataFiles) {
-      result.push(df);
-      const views = bySource.get(df.id);
-      if (views) { result.push(...views); bySource.delete(df.id); }
-    }
-    for (const views of bySource.values()) result.push(...views);
-    return result;
-  }, [childFiles]);
+  const allFiles = childFiles || [];
 
   return (
     <div>
@@ -270,8 +262,8 @@ function FolderNode({ folder, depth }: { folder: FolderItem; depth: number }) {
           {childFolders?.map((child) => (
             <FolderNode key={child.id} folder={child} depth={depth + 1} />
           ))}
-          {sortedFiles.map((file) => (
-            <FileNode key={file.id} file={file} depth={depth + 1} />
+          {allFiles.map((file) => (
+            <FileNode key={file.id} file={file} depth={depth + 1} siblingFiles={allFiles} />
           ))}
         </>
       )}
@@ -658,25 +650,7 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
 
   const isSettingUp = !!filesFolderId && filesFiles?.length === 0 && filesFolders?.length === 0;
 
-  // Sort: data files first, then their view instances grouped after each source
-  const visibleFiles = useMemo(() => {
-    if (!filesFiles) return [];
-    const dataFiles = filesFiles.filter((f) => !f.is_instance);
-    const bySource = new Map<string, FileItem[]>();
-    for (const f of filesFiles.filter((f) => f.is_instance)) {
-      const key = f.source_file_id || '';
-      if (!bySource.has(key)) bySource.set(key, []);
-      bySource.get(key)!.push(f);
-    }
-    const result: FileItem[] = [];
-    for (const df of dataFiles) {
-      result.push(df);
-      const views = bySource.get(df.id);
-      if (views) { result.push(...views); bySource.delete(df.id); }
-    }
-    for (const views of bySource.values()) result.push(...views);
-    return result;
-  }, [filesFiles]);
+  const visibleFiles = filesFiles || [];
 
   async function handleNewFile() {
     if (!filesFolderId) return;
@@ -740,7 +714,7 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
                   <FolderNode key={folder.id} folder={folder} depth={0} />
                 ))}
                 {visibleFiles.map((file) => (
-                  <FileNode key={file.id} file={file} depth={0} />
+                  <FileNode key={file.id} file={file} depth={0} siblingFiles={visibleFiles} />
                 ))}
               </div>
               <button
@@ -830,7 +804,7 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
           <div className="space-y-0.5">
             {visibleFiles.length > 0 ? (
               visibleFiles.map((file) => (
-                <FileNode key={file.id} file={file} depth={0} />
+                <FileNode key={file.id} file={file} depth={0} siblingFiles={visibleFiles} />
               ))
             ) : (
               <p className="px-3 py-2 text-xs text-gray-400 italic">

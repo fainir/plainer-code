@@ -140,6 +140,14 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
           if (e.key === 'Enter' || e.key === ' ') selectFile(file.id, file.name, file.is_instance ? 'instance' : file.file_type);
         }}
       >
+        {file.is_instance ? appTypeIcon(file.app_type_slug, 14) : treeFileIcon(file.file_type)}
+        <span className="truncate flex-1">
+          {splitFileName(file.name).base}
+          <span className="text-[0.7em] opacity-40">{splitFileName(file.name).ext}</span>
+        </span>
+        {file.is_vibe_file && !file.is_instance && (
+          <Sparkles size={11} className="text-indigo-400 shrink-0" />
+        )}
         <button
           type="button"
           onClick={(e) => {
@@ -149,20 +157,12 @@ function FileNode({ file, depth, siblingFiles }: { file: FileItem; depth: number
           className={`p-0.5 rounded shrink-0 transition ${
             expanded
               ? 'text-gray-500'
-              : 'text-gray-400 hover:text-gray-600'
+              : 'text-gray-300 group-hover:text-gray-400'
           }`}
           title={expanded ? 'Hide related files' : 'Show related files'}
         >
           {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
         </button>
-        {file.is_instance ? appTypeIcon(file.app_type_slug, 14) : treeFileIcon(file.file_type)}
-        <span className="truncate flex-1">
-          {splitFileName(file.name).base}
-          <span className="text-[0.7em] opacity-40">{splitFileName(file.name).ext}</span>
-        </span>
-        {file.is_vibe_file && !file.is_instance && (
-          <Sparkles size={11} className="text-indigo-400 shrink-0" />
-        )}
       </div>
 
       {/* Related files nested underneath */}

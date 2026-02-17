@@ -938,11 +938,6 @@ export default function Drive() {
     e.target.value = '';
   };
 
-  // File viewer mode
-  if (selectedFileId) {
-    return <FileViewer fileId={selectedFileId} fileName={selectedFileName || ''} />;
-  }
-
   // Sort: data files first, then their view instances grouped after each source
   const visibleFiles = useMemo(() => {
     if (!files) return [];
@@ -962,6 +957,11 @@ export default function Drive() {
     for (const views of bySource.values()) result.push(...views);
     return result;
   }, [files]);
+
+  // File viewer mode (must be after all hooks)
+  if (selectedFileId) {
+    return <FileViewer fileId={selectedFileId} fileName={selectedFileName || ''} />;
+  }
 
   const isLoading = filesLoading || foldersLoading;
 

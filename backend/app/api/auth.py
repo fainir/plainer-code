@@ -58,6 +58,8 @@ async def register(
             )
             workspace = ws.scalar_one()
             files_folder = await ensure_system_folders(db, workspace.id, user.id)
+            # Commit user + workspace + folders NOW so the background task can see them
+            await db.commit()
             background_tasks.add_task(
                 _seed_in_background, workspace.id, user.id, files_folder.id,
             )

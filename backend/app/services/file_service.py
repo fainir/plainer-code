@@ -1209,225 +1209,35 @@ _COMPANY_PLANNER_FILES = [
     },
 ]
 
-# Map file names to the views (instances) that should be created for them.
-# Slugs starting with "app-" are marketplace apps that get auto-installed.
+# Map file names to the default view created at seed time.
+# Only 1 built-in view per file for fast onboarding.
+# Users can add board/calendar/marketplace views later.
 _PERSONAL_VIEWS: dict[str, list[str]] = {
-    "weekly-plan.csv": ["table", "board", "calendar"],
-    "habits.csv": ["table", "app-habit-tracker", "app-heatmap"],
-    "goals.csv": ["table", "app-okr-tracker", "app-bar-chart"],
-    "budget.csv": ["table", "app-pie-chart", "app-line-chart"],
-    "fitness.csv": ["table", "app-bar-chart", "app-line-chart"],
-    "reading-list.csv": ["table", "app-gallery"],
-    "projects.csv": ["table", "board", "app-gantt", "app-timeline"],
+    "weekly-plan.csv": ["table"],
+    "habits.csv": ["table"],
+    "goals.csv": ["table"],
+    "budget.csv": ["table"],
+    "fitness.csv": ["table"],
+    "reading-list.csv": ["table"],
+    "projects.csv": ["table"],
     "journal.md": ["document"],
     "notes.md": ["document"],
 }
 
 _COMPANY_VIEWS: dict[str, list[str]] = {
-    "project-board.csv": ["table", "board", "app-sprint-board", "app-gantt"],
-    "team.csv": ["table", "app-gallery"],
-    "okrs.csv": ["table", "app-okr-tracker", "app-bar-chart"],
-    "roadmap.csv": ["table", "app-roadmap", "app-timeline", "app-gantt"],
-    "kpis.csv": ["table", "app-kpi-dashboard", "app-line-chart", "app-bar-chart"],
-    "clients.csv": ["table", "app-crm", "app-pie-chart"],
-    "budget.csv": ["table", "app-pie-chart", "app-line-chart", "app-summary-stats"],
-    "retrospective.csv": ["table", "app-retro-board"],
+    "project-board.csv": ["table"],
+    "team.csv": ["table"],
+    "okrs.csv": ["table"],
+    "roadmap.csv": ["table"],
+    "kpis.csv": ["table"],
+    "clients.csv": ["table"],
+    "budget.csv": ["table"],
+    "retrospective.csv": ["table"],
     "meeting-notes.md": ["document"],
     "notes.md": ["document"],
 }
 
 
-# Custom HTML dashboard views — created as custom-view instances
-# Key is the file name, value is list of {name, content} dicts
-_LIFE_DASHBOARD_HTML = """\
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Life Dashboard</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:24px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px}
-.card{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.card h3{font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
-.big-num{font-size:36px;font-weight:700;line-height:1}
-.sub{font-size:13px;color:#94a3b8;margin-top:4px}
-.progress-bar{height:8px;background:#e2e8f0;border-radius:4px;margin-top:8px;overflow:hidden}
-.progress-fill{height:100%;border-radius:4px;transition:width .3s}
-.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600}
-.green{color:#16a34a;background:#dcfce7}.blue{color:#2563eb;background:#dbeafe}
-.amber{color:#d97706;background:#fef3c7}.red{color:#dc2626;background:#fee2e2}
-h1{font-size:22px;font-weight:700;margin-bottom:4px}
-.header-sub{color:#64748b;font-size:14px;margin-bottom:20px}
-.list{list-style:none}.list li{padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
-.list li:last-child{border:none}
-.habit-row{display:flex;gap:4px;align-items:center}
-.dot{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px}
-.dot.yes{background:#dcfce7;color:#16a34a}.dot.no{background:#fee2e2;color:#dc2626}
-</style></head><body>
-<h1>Life Dashboard</h1>
-<p class="header-sub">Your personal metrics at a glance</p>
-<div class="grid">
-<div class="card"><h3>Weekly Tasks</h3><div id="tasks"></div></div>
-<div class="card"><h3>Habit Streaks</h3><div id="habits"></div></div>
-<div class="card"><h3>Goal Progress</h3><div id="goals"></div></div>
-<div class="card"><h3>Budget Summary</h3><div id="budget"></div></div>
-<div class="card"><h3>Fitness This Week</h3><div id="fitness"></div></div>
-<div class="card"><h3>Reading Progress</h3><div id="reading"></div></div>
-</div>
-<script>
-const csv=window.__SOURCE_CSV__||'';
-const rows=csv.trim().split('\\n').slice(1).map(r=>{const cols=[];let cur='',inQ=false;for(const c of r){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){cols.push(cur.trim());cur=''}else cur+=c}cols.push(cur.trim());return cols});
-const hdr=(csv.trim().split('\\n')[0]||'').split(',').map(h=>h.trim());
-const statusIdx=hdr.indexOf('Status');
-if(statusIdx>=0){
-const done=rows.filter(r=>r[statusIdx]==='Done').length;
-const ip=rows.filter(r=>r[statusIdx]==='In Progress').length;
-const todo=rows.filter(r=>r[statusIdx]==='Todo').length;
-document.getElementById('tasks').innerHTML=
-'<div class="big-num">'+rows.length+'</div><div class="sub">total tasks this week</div>'+
-'<div style="display:flex;gap:8px;margin-top:12px">'+
-'<span class="tag green">'+done+' done</span>'+
-'<span class="tag blue">'+ip+' in progress</span>'+
-'<span class="tag amber">'+todo+' todo</span></div>';
-}else{document.getElementById('tasks').innerHTML='<div class="sub">Open weekly-plan.csv to see tasks</div>'}
-['habits','goals','budget','fitness','reading'].forEach(id=>{
-document.getElementById(id).innerHTML='<div class="sub">Data loaded from your files</div>';
-});
-</script></body></html>
-"""
-
-_BUDGET_DASHBOARD_HTML = """\
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Budget Overview</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:24px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
-.card{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0}
-.card h3{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
-.big{font-size:32px;font-weight:700;line-height:1}
-.green{color:#16a34a}.red{color:#dc2626}.blue{color:#2563eb}.amber{color:#d97706}
-.sub{font-size:13px;color:#94a3b8;margin-top:4px}
-h1{font-size:22px;font-weight:700;margin-bottom:4px}
-.header-sub{color:#64748b;font-size:14px;margin-bottom:20px}
-.bar-chart{margin-top:24px}
-.bar-row{display:flex;align-items:center;margin-bottom:10px}
-.bar-label{width:120px;font-size:13px;color:#475569;flex-shrink:0}
-.bar-track{flex:1;height:24px;background:#f1f5f9;border-radius:6px;position:relative;overflow:hidden}
-.bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;font-size:11px;color:#fff;font-weight:600;min-width:fit-content}
-.bar-budget{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#94a3b8}
-.legend{display:flex;gap:16px;margin-top:16px;font-size:12px;color:#64748b}
-.legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px}
-</style></head><body>
-<h1>Budget Overview</h1>
-<p class="header-sub">Monthly income, expenses, and savings at a glance</p>
-<div class="grid" id="summary"></div>
-<div class="bar-chart" id="bars"></div>
-<div class="legend"><span><span class="legend-dot" style="background:#3b82f6"></span>Actual</span><span><span class="legend-dot" style="background:#e2e8f0"></span>Budgeted</span></div>
-<script>
-const csv=window.__SOURCE_CSV__||'';
-const lines=csv.trim().split('\\n');
-const hdr=lines[0].split(',').map(h=>h.trim());
-const rows=lines.slice(1).map(r=>{const cols=[];let cur='',inQ=false;for(const c of r){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){cols.push(cur.trim());cur=''}else cur+=c}cols.push(cur.trim());return cols});
-const ci=hdr.indexOf('Category'),ii=hdr.indexOf('Item'),bi=hdr.indexOf('Budgeted'),ai=hdr.indexOf('Actual'),ti=hdr.indexOf('Type');
-let totalIncome=0,totalBudgeted=0,totalActual=0,totalSavings=0;
-const categories=new Map();
-rows.forEach(r=>{
-const cat=r[ci]||'',budgeted=parseFloat(r[bi])||0,actual=parseFloat(r[ai])||0,type=r[ti]||'expense';
-if(type==='income'){totalIncome+=actual}
-else if(type==='savings'){totalSavings+=actual;totalBudgeted+=budgeted;totalActual+=actual}
-else{totalBudgeted+=budgeted;totalActual+=actual}
-if(type!=='income'){
-if(!categories.has(cat))categories.set(cat,{budgeted:0,actual:0});
-const c=categories.get(cat);c.budgeted+=budgeted;c.actual+=actual;
-}
-});
-const remaining=totalIncome-totalActual-totalSavings;
-const s=document.getElementById('summary');
-s.innerHTML=
-'<div class="card"><h3>Total Income</h3><div class="big green">$'+totalIncome.toLocaleString()+'</div></div>'+
-'<div class="card"><h3>Total Spent</h3><div class="big red">$'+totalActual.toLocaleString()+'</div><div class="sub">of $'+totalBudgeted.toLocaleString()+' budgeted</div></div>'+
-'<div class="card"><h3>Savings</h3><div class="big blue">$'+totalSavings.toLocaleString()+'</div><div class="sub">'+Math.round(totalSavings/totalIncome*100)+'% savings rate</div></div>'+
-'<div class="card"><h3>Remaining</h3><div class="big '+(remaining>=0?'green':'red')+'">$'+remaining.toLocaleString()+'</div><div class="sub">'+(remaining>=0?'under budget':'over budget')+'</div></div>';
-const maxVal=Math.max(...[...categories.values()].map(c=>Math.max(c.budgeted,c.actual)));
-const b=document.getElementById('bars');
-let barsHtml='';
-categories.forEach((v,k)=>{
-const pct=Math.round(v.actual/maxVal*100);
-const color=v.actual>v.budgeted?'#ef4444':'#3b82f6';
-barsHtml+='<div class="bar-row"><div class="bar-label">'+k+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'">$'+v.actual.toLocaleString()+'</div><div class="bar-budget">$'+v.budgeted.toLocaleString()+'</div></div></div>';
-});
-b.innerHTML=barsHtml;
-</script></body></html>
-"""
-
-_COMPANY_DASHBOARD_HTML = """\
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Company Dashboard</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f8fafc;color:#1e293b;padding:24px}
-h1{font-size:22px;font-weight:700;margin-bottom:4px}
-.header-sub{color:#64748b;font-size:14px;margin-bottom:20px}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px}
-.metric{background:#fff;border-radius:12px;padding:16px;border:1px solid #e2e8f0}
-.metric-label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
-.metric-value{font-size:28px;font-weight:700;margin:4px 0}
-.metric-sub{font-size:12px;display:flex;align-items:center;gap:4px}
-.up{color:#16a34a}.down{color:#dc2626}.neutral{color:#64748b}
-.section{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;margin-bottom:16px}
-.section h2{font-size:15px;font-weight:600;margin-bottom:12px}
-.progress-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.progress-label{width:200px;font-size:13px;color:#475569;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.progress-bar{flex:1;height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden}
-.progress-fill{height:100%;border-radius:5px}
-.progress-pct{width:40px;text-align:right;font-size:13px;font-weight:600;color:#475569}
-.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
-.status-card{text-align:center;padding:12px;border-radius:8px}
-.status-num{font-size:24px;font-weight:700}
-.status-label{font-size:11px;color:#64748b;margin-top:2px}
-</style></head><body>
-<h1>Company Dashboard</h1>
-<p class="header-sub">Key metrics and progress overview</p>
-<div class="metrics" id="kpis"></div>
-<div class="section"><h2>Sprint Progress</h2><div class="status-grid" id="sprint"></div></div>
-<div class="section"><h2>OKR Progress</h2><div id="okrs"></div></div>
-<script>
-const csv=window.__SOURCE_CSV__||'';
-const lines=csv.trim().split('\\n');
-const hdr=lines[0].split(',').map(h=>h.trim());
-const rows=lines.slice(1).map(r=>{const cols=[];let cur='',inQ=false;for(const c of r){if(c==='"')inQ=!inQ;else if(c===','&&!inQ){cols.push(cur.trim());cur=''}else cur+=c}cols.push(cur.trim());return cols});
-const mi=hdr.indexOf('Metric'),ci=hdr.indexOf('Current'),ti=hdr.indexOf('Target'),pi=hdr.indexOf('Previous'),tri=hdr.indexOf('Trend');
-const kpiEl=document.getElementById('kpis');
-let kpiHtml='';
-rows.slice(0,8).forEach(r=>{
-const metric=r[mi]||'',current=r[ci]||'0',target=r[ti]||'0',trend=r[tri]||'';
-const arrow=trend==='Up'?'↑':trend==='Down'?'↓':'→';
-const cls=trend==='Up'?'up':trend==='Down'?'down':'neutral';
-kpiHtml+='<div class="metric"><div class="metric-label">'+metric+'</div><div class="metric-value">'+current+'</div><div class="metric-sub '+cls+'">'+arrow+' vs '+r[pi]+' prev · target '+target+'</div></div>';
-});
-kpiEl.innerHTML=kpiHtml;
-document.getElementById('sprint').innerHTML=
-'<div class="status-card" style="background:#dcfce7"><div class="status-num" style="color:#16a34a">6</div><div class="status-label">Done</div></div>'+
-'<div class="status-card" style="background:#dbeafe"><div class="status-num" style="color:#2563eb">7</div><div class="status-label">In Progress</div></div>'+
-'<div class="status-card" style="background:#fef3c7"><div class="status-num" style="color:#d97706">7</div><div class="status-label">Todo</div></div>'+
-'<div class="status-card" style="background:#f1f5f9"><div class="status-num" style="color:#64748b">5</div><div class="status-label">Backlog</div></div>';
-document.getElementById('okrs').innerHTML=
-'<div class="progress-row"><div class="progress-label">Ship production-ready v1.0</div><div class="progress-bar"><div class="progress-fill" style="width:58%;background:#3b82f6"></div></div><div class="progress-pct">58%</div></div>'+
-'<div class="progress-row"><div class="progress-label">Acquire 1000 beta users</div><div class="progress-bar"><div class="progress-fill" style="width:45%;background:#8b5cf6"></div></div><div class="progress-pct">45%</div></div>'+
-'<div class="progress-row"><div class="progress-label">Build world-class eng culture</div><div class="progress-bar"><div class="progress-fill" style="width:69%;background:#16a34a"></div></div><div class="progress-pct">69%</div></div>'+
-'<div class="progress-row"><div class="progress-label">Delight every user</div><div class="progress-bar"><div class="progress-fill" style="width:58%;background:#f59e0b"></div></div><div class="progress-pct">58%</div></div>';
-</script></body></html>
-"""
-
-# Custom HTML views to create as custom-view instances
-_PERSONAL_CUSTOM_VIEWS: dict[str, list[dict]] = {
-    "budget.csv": [
-        {"name": "Budget Dashboard.html", "content": _BUDGET_DASHBOARD_HTML},
-    ],
-}
-
-_COMPANY_CUSTOM_VIEWS: dict[str, list[dict]] = {
-    "kpis.csv": [
-        {"name": "Company Dashboard.html", "content": _COMPANY_DASHBOARD_HTML},
-    ],
-}
 
 
 async def _resolve_app_type(
@@ -1489,12 +1299,19 @@ async def seed_default_planner_content(
 ) -> None:
     """Create Personal Planner and Company Planner folders with example files and views."""
 
+    # Cache resolved app types to avoid repeated DB lookups
+    _app_cache: dict[str, "AppType | None"] = {}
+
+    async def _get_app(slug: str) -> "AppType | None":
+        if slug not in _app_cache:
+            _app_cache[slug] = await get_app_type_by_slug(db, slug, workspace_id)
+        return _app_cache[slug]
+
     async def _create_planner(
         parent_id: uuid.UUID,
         name: str,
         files_spec: list[dict],
         views_spec: dict[str, list[str]],
-        custom_views_spec: dict[str, list[dict]] | None = None,
     ) -> None:
         folder = await create_folder(db, workspace_id, owner_id, name, parent_id=parent_id)
         for spec in files_spec:
@@ -1502,30 +1319,16 @@ async def seed_default_planner_content(
                 db, storage, workspace_id, spec["name"], spec["content"],
                 owner_id, folder_id=folder.id, created_by_id=owner_id,
             )
-            slugs = views_spec.get(spec["name"], [])
-            for slug in slugs:
-                app_type = await _resolve_app_type(db, slug, workspace_id)
+            for slug in views_spec.get(spec["name"], []):
+                app_type = await _get_app(slug)
                 if app_type:
                     await create_instance(db, storage, file, app_type)
-            # Custom HTML views
-            if custom_views_spec:
-                for cv in custom_views_spec.get(spec["name"], []):
-                    custom_app = await get_app_type_by_slug(db, "custom-view", workspace_id)
-                    if custom_app:
-                        await create_instance(
-                            db, storage, file, custom_app,
-                            name=cv["name"], content=cv["content"],
-                        )
-            # Always add text-editor
-            editor = await get_app_type_by_slug(db, "text-editor", workspace_id)
-            if editor:
-                await create_instance(db, storage, file, editor)
 
     await _create_planner(
         files_folder_id, "Personal Planner",
-        _PERSONAL_PLANNER_FILES, _PERSONAL_VIEWS, _PERSONAL_CUSTOM_VIEWS,
+        _PERSONAL_PLANNER_FILES, _PERSONAL_VIEWS,
     )
     await _create_planner(
         files_folder_id, "Company Planner",
-        _COMPANY_PLANNER_FILES, _COMPANY_VIEWS, _COMPANY_CUSTOM_VIEWS,
+        _COMPANY_PLANNER_FILES, _COMPANY_VIEWS,
     )

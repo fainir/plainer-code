@@ -48,6 +48,7 @@ import {
 import { useChatStore } from '../../stores/chatStore';
 import { useUIStore } from '../../stores/uiStore';
 import MarketplaceModal from '../marketplace/MarketplaceModal';
+import { track } from '../../lib/analytics';
 
 function splitFileName(name: string): { base: string; ext: string } {
   const dot = name.lastIndexOf('.');
@@ -699,6 +700,7 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
     if (!filesFolderId) return;
     try {
       const file = await createFile('Untitled.md', '', filesFolderId);
+      track('File Created', { name: file.name, source: 'sidebar' });
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
       selectFile(file.id, file.name, file.file_type);
     } catch { /* ignore */ }
@@ -710,6 +712,7 @@ function PrivateSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
     for (const f of Array.from(files)) {
       try {
         await uploadFile(f, filesFolderId);
+        track('File Uploaded', { source: 'sidebar' });
       } catch { /* ignore */ }
     }
     queryClient.invalidateQueries({ queryKey: ['drive-files'] });
@@ -836,6 +839,7 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
     if (!filesFolderId) return;
     try {
       const file = await createFile('Untitled.md', '', filesFolderId);
+      track('File Created', { name: file.name, source: 'shared' });
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
       selectFile(file.id, file.name, file.file_type);
     } catch { /* ignore */ }
@@ -847,6 +851,7 @@ function SharedSection({ onAddTemplate }: { onAddTemplate?: () => void }) {
     for (const f of Array.from(files)) {
       try {
         await uploadFile(f, filesFolderId);
+        track('File Uploaded', { source: 'shared' });
       } catch { /* ignore */ }
     }
     queryClient.invalidateQueries({ queryKey: ['drive-files'] });
@@ -955,6 +960,7 @@ export default function FolderExplorer() {
           <button
             type="button"
             onClick={() => {
+              track('User Logged Out');
               logout();
               navigate('/login');
             }}

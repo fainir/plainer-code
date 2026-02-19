@@ -52,3 +52,15 @@ body {
 .ProseMirror code { background: #f3f4f6; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.875em; }
 .ProseMirror pre { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; font-family: ui-monospace, monospace; font-size: 0.875em; overflow-x: auto; }
 .ProseMirror hr { border: none; border-top: 1px solid #e5e7eb; margin: 1rem 0; }
+
+/* Landing page animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

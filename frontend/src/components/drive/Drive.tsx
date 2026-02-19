@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toggleFileFavorite } from '../../api/drive';
+import { track } from '../../lib/analytics';
 
 function fileIcon(fileType: string) {
   const cls = "text-gray-400";
@@ -418,6 +419,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
   const favMutation = useMutation({
     mutationFn: () => toggleFileFavorite(fileId),
     onSuccess: () => {
+      track('File Favorited');
       queryClient.invalidateQueries({ queryKey: ['file-content', fileId] });
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
       queryClient.invalidateQueries({ queryKey: ['favorite-files'] });
@@ -439,6 +441,7 @@ function FileViewer({ fileId, fileName }: { fileId: string; fileName: string }) 
       app_type_slug: slug,
     }),
     onSuccess: (newInst) => {
+      track('View Added', { type: newInst.app_type_slug });
       queryClient.invalidateQueries({ queryKey: ['file-instances', instancesForFileId] });
       selectFile(newInst.id, newInst.name, 'instance');
     },
@@ -788,6 +791,7 @@ export default function Drive() {
   const createFileMutation = useMutation({
     mutationFn: () => createFile(newFileName, newFileContent, currentFolderId || undefined),
     onSuccess: () => {
+      track('File Created', { name: newFileName });
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
       setShowCreateFile(false);
       setNewFileName('');
@@ -798,6 +802,7 @@ export default function Drive() {
   const createFolderMutation = useMutation({
     mutationFn: () => createFolder(newFolderName, currentFolderId || undefined),
     onSuccess: () => {
+      track('Folder Created', { name: newFolderName });
       queryClient.invalidateQueries({ queryKey: ['drive-folders'] });
       setShowCreateFolder(false);
       setNewFolderName('');
@@ -807,6 +812,7 @@ export default function Drive() {
   const uploadMutation = useMutation({
     mutationFn: (file: File) => uploadFile(file, currentFolderId || undefined),
     onSuccess: () => {
+      track('File Uploaded');
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
     },
   });

@@ -16,6 +16,7 @@ import {
 import ApiKeyDialog from '../ApiKeyDialog';
 import MarketplaceModal from '../marketplace/MarketplaceModal';
 import CreateCommandModal from '../marketplace/CreateCommandModal';
+import { track } from '../../lib/analytics';
 
 interface Attachment {
   type: 'image';
@@ -177,6 +178,7 @@ export default function ChatPanel({ send, connected, userName, userId }: Props) 
     }
     send({ type: 'agent.invoke', payload });
     setAttachments([]);
+    track('AI Message Sent', { has_attachments: attachments.length > 0 });
   }
 
   function handleStop() {

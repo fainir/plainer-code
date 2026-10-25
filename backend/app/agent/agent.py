@@ -129,8 +129,11 @@ class PlainerAgent:
             response = None
 
             async with self.client.messages.stream(
-                model="claude-opus-4-6",
-                max_tokens=8192,
+                model="claude-opus-5-5",
+                # Opus 5.5 always thinks, and thinking shares this budget with
+                # the reply and any file contents in tool calls.
+                max_tokens=32000,
+                output_config={"effort": "high"},
                 system=system_prompt,
                 messages=messages,
                 tools=TOOLS,

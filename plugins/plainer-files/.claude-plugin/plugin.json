@@ -1,6 +1,6 @@
 {
   "name": "plainer-files",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find, read, create, edit, and delete files in your own Plainer workspace from Claude.",
   "author": {
     "name": "Plainer",

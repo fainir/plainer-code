@@ -1,0 +1,18 @@
+{
+  "name": "plainer-files",
+  "version": "1.0.0",
+  "description": "Find, read, create, edit, and delete files in your own Plainer workspace from Claude.",
+  "author": {
+    "name": "Plainer",
+    "url": "https://plainer.app"
+  },
+  "homepage": "https://plainer.app/connections",
+  "repository": "https://github.com/fainir/plainer-code",
+  "license": "LicenseRef-Plainer-Proprietary",
+  "mcpServers": {
+    "plainer": {
+      "type": "http",
+      "url": "https://plainer.app/mcp"
+    }
+  }
+}

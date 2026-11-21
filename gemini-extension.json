@@ -1,0 +1,10 @@
+{
+  "name": "plainer-files",
+  "version": "1.0.0",
+  "description": "Find, read, and update files in your Plainer workspace through Gemini CLI.",
+  "mcpServers": {
+    "plainer": {
+      "httpUrl": "https://plainer.app/mcp"
+    }
+  }
+}

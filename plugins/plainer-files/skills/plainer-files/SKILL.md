@@ -15,7 +15,7 @@ Use the connected Plainer MCP tools directly from the current conversation. Plai
 ## Create and edit
 
 - Use `create_file` for a new file. Set the requested name, format, and content. Use the returned `folder_id` from the folder list when a destination was specified. Native Plainer documents accept Markdown.
-- Use `update_file` on an existing file. For a targeted document edit, send an `edits` array with exact, unique `before` and `after` passages. Preserve surrounding text, links, and embedded elements. Read the whole document before replacing its entire `content`. For a custom data file, update the requested `records` by `record_id` and field key.
+- Use `update_file` on an existing file. For targeted document changes, send up to 30 entries in the `edits` array. They apply in order. Each `before` passage must match exactly once. Set `after` to its replacement, including an empty string to remove that passage. Preserve surrounding text, links, and embedded elements. Read the whole document before replacing its entire `content`. For a custom data file, update the requested `records` by `record_id` and field key.
 - Every write takes the latest workspace `revision` from a list, read, or successful write. On a conflict, reread the target and reconcile the requested change with the newer version. If a write's result is uncertain, check what was saved before retrying.
 - Read the saved change back using its file ID. Report what changed and give the returned file link. If only read tools are available, the user can reconnect with **Edit files**.
 

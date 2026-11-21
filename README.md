@@ -2,6 +2,18 @@
 
 AI-powered collaborative workspace with a Drive-like file system, real-time chat, and an AI agent that can read/write/organize your files.
 
+## Use Plainer from Gemini CLI
+
+```sh
+gemini extensions install https://github.com/fainir/plainer-code
+```
+
+Start a new Gemini CLI session and run `/mcp auth plainer`. Sign in to Plainer in the browser, choose **Read files**, then select **Allow access**. Ask Gemini to list your Plainer files and open one you recognize. To edit files, choose **Edit files** and review changes before approving them.
+
+The connection works on Plainer Free. The setup guide shows the scope choices and opens a sample dashboard. [Gemini setup](https://plainer.app/connections?client=gemini&utm_source=github&utm_medium=extension&utm_campaign=gemini_cli_extension)
+
+For the other clients, open the [ChatGPT and Claude file connector release](https://github.com/fainir/plainer-code/releases/tag/plainer-files-v1.0.1).
+
 ## Tech Stack
 
 **Backend:** Python 3.11, FastAPI, SQLAlchemy (async), PostgreSQL, Redis, Alembic migrations

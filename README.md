@@ -12,7 +12,17 @@ Start a new Gemini CLI session and run `/mcp auth plainer`. Sign in to Plainer i
 
 The connection works on Plainer Free. The setup guide shows the scope choices and opens a sample dashboard. [Gemini setup](https://plainer.app/connections?client=gemini&utm_source=github&utm_medium=extension&utm_campaign=gemini_cli_extension)
 
-For the other clients, open the [ChatGPT and Claude file connector release](https://github.com/fainir/plainer-code/releases/tag/plainer-files-v1.0.1).
+## Use Plainer from Claude
+
+Follow the [Claude setup guide](https://plainer.app/connections?client=claude&utm_source=github&utm_medium=readme&utm_campaign=plainer-files-claude) to add the custom connector and sign in to your Plainer account. Choose **Read files**, then ask Claude to find and summarize a project note. Choose **Edit files** when you want Claude to save a change. You can revoke access from Plainer’s Connections page. The connector works with Plainer Free.
+
+To load the bundled skill and connector in Claude Code for one session, run this from a local copy of this repository.
+
+```sh
+claude --plugin-dir ./plugins/plainer-files
+```
+
+In Claude Code, open `/mcp`, choose the Plainer server (`plugin:plainer-files:plainer`), then **Authenticate**. The [file connector release](https://github.com/fainir/plainer-code/releases/tag/plainer-files-v1.0.1) also includes the ChatGPT package.
 
 ## Tech Stack
 
